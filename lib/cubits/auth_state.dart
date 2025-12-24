@@ -1,0 +1,30 @@
+import 'package:equatable/equatable.dart';
+import 'package:wenh/models/worker_model.dart';
+
+abstract class AuthState extends Equatable {
+  const AuthState();
+  @override
+  List<Object?> get props => [];
+}
+
+class AuthInitial extends AuthState {
+  const AuthInitial();
+}
+
+class AuthLoading extends AuthState {
+  const AuthLoading();
+}
+
+class Authenticated extends AuthState {
+  final WorkerModel worker;
+  const Authenticated(this.worker);
+  @override
+  List<Object?> get props => [worker];
+}
+
+class AuthError extends AuthState {
+  final String message;
+  const AuthError(this.message);
+  @override
+  List<Object?> get props => [message];
+}
