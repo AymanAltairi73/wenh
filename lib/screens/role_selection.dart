@@ -97,6 +97,48 @@ class RoleSelectionScreen extends StatelessWidget {
                 ),
               ),
             ),
+                const SizedBox(height: 16),
+            // Admin
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('مدير النظام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'جديد',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('سجّل دخولك لإدارة النظام والطلبات والمستخدمين.'),
+                    const SizedBox(height: 12),
+                    CustomButton(
+                      label: 'تسجيل دخول المدير',
+                      icon: Icons.admin_panel_settings,
+                      onPressed: () => Navigator.pushNamed(context, '/admin-login'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
                 const SizedBox(height: 12),
               ],
             ),

@@ -40,12 +40,9 @@ dependencies:
   equatable: ^2.0.5
   google_fonts: ^6.2.1
   shared_preferences: ^2.2.2
-  
-  # GetX for state management and navigation
-  
-  # Firebase
-  
-  # Local storage for session management
+  uuid: ^4.5.1
+  flutter_animate: ^4.5.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

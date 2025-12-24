@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
+import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
 import 'screens/role_selection.dart';
 import 'screens/customer_home.dart';
@@ -11,6 +12,9 @@ import 'screens/send_request_screen.dart';
 import 'screens/worker_login.dart';
 import 'screens/worker_requests.dart';
 import 'screens/admin_dashboard.dart';
+import 'screens/admin_login_screen.dart';
+import 'screens/enhanced_admin_dashboard.dart';
+import 'screens/admin_management_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/customer_profile_screen.dart';
@@ -27,6 +31,7 @@ class App extends StatelessWidget {
         BlocProvider(create: (_) => ThemeCubit()),
         BlocProvider(create: (_) => RequestCubit()..getRequests()),
         BlocProvider(create: (_) => AuthCubit()),
+        BlocProvider(create: (_) => AdminCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
@@ -52,10 +57,14 @@ class App extends StatelessWidget {
               '/register': (_) => const RegisterScreen(),
               '/worker': (_) => const WorkerRequestsScreen(),
               '/admin': (_) => const AdminDashboardScreen(),
+              '/admin-login': (_) => const AdminLoginScreen(),
+              '/enhanced-admin': (_) => const EnhancedAdminDashboard(),
+              '/admin-management': (_) => const AdminManagementScreen(),
               '/settings': (_) => const SettingsScreen(),
               '/customer-profile': (_) => const CustomerProfileScreen(),
               '/worker-profile': (_) => const WorkerProfileScreen(),
               '/admin-profile': (_) => const AdminProfileScreen(),
+              '/enhanced-admin-profile': (_) => const EnhancedAdminProfile(),
             },
           );
         },
