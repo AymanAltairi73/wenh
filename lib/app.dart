@@ -9,8 +9,8 @@ import 'cubits/theme_cubit.dart';
 import 'services/firebase_service.dart';
 import 'screens/role_selection.dart';
 import 'screens/customer_home.dart';
+import 'screens/enhanced_customer_home_screen.dart';
 import 'screens/send_request_screen.dart';
-import 'screens/request_preview_screen.dart';
 import 'screens/worker_login.dart';
 import 'screens/worker_requests.dart';
 import 'screens/enhanced_worker_requests_screen.dart';
@@ -66,6 +66,7 @@ class _AppState extends State<App> {
             routes: {
               '/role': (_) => const RoleSelectionScreen(),
               '/': (_) => const CustomerHomeScreen(),
+              '/enhanced-home': (_) => const EnhancedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
               '/register': (_) => const RegisterScreen(),
