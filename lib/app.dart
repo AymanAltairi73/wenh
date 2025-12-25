@@ -13,6 +13,7 @@ import 'screens/send_request_screen.dart';
 import 'screens/request_preview_screen.dart';
 import 'screens/worker_login.dart';
 import 'screens/worker_requests.dart';
+import 'screens/enhanced_worker_requests_screen.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/enhanced_admin_dashboard.dart';
@@ -69,6 +70,7 @@ class _AppState extends State<App> {
               '/login': (_) => const WorkerLoginScreen(),
               '/register': (_) => const RegisterScreen(),
               '/worker': (_) => const WorkerRequestsScreen(),
+              '/enhanced-worker': (_) => const EnhancedWorkerRequestsScreen(),
               '/admin': (_) => const AdminDashboardScreen(),
               '/admin-login': (_) => const AdminLoginScreen(),
               '/enhanced-admin': (_) => const EnhancedAdminDashboard(),
