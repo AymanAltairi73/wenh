@@ -38,13 +38,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('تسجيل دخول العامل')),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.teal.shade50, Colors.white],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
@@ -70,11 +64,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.teal, Colors.teal.shade300],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                             child: Column(
                               children: [

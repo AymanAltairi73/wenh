@@ -167,13 +167,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('إرسال طلب')),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.teal.shade50, Colors.white],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: SingleChildScrollView(
             child: Padding(

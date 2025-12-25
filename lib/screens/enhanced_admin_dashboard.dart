@@ -30,9 +30,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           child: Column(
             children: [
@@ -69,7 +67,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).appBarTheme.backgroundColor,
         boxShadow: [AppColors.cardShadowLight],
       ),
       child: Row(
@@ -87,7 +85,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -96,14 +94,14 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
                 ),
                 Text(
                   'إدارة شاملة للنظام',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
               ],

@@ -30,15 +30,17 @@ class AppColors {
   static const Color infoDark = Color(0xFF1976D2);
   
   static const Color background = Color(0xFFF8F9FA);
-  static const Color backgroundDark = Color(0xFF1A1A2E);
+  static const Color backgroundDark = Color(0xFF0F1419);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF16213E);
+  static const Color surfaceDark = Color(0xFF1A1F26);
+  static const Color cardDark = Color(0xFF252D38);
   
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
   static const Color textDisabled = Color(0xFFBDBDBD);
-  static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFFB0B0B0);
+  static const Color textPrimaryDark = Color(0xFFE1E3E6);
+  static const Color textSecondaryDark = Color(0xFFB0BEC5);
+  static const Color textTertiaryDark = Color(0xFF78909C);
   
   static const Color divider = Color(0xFFE0E0E0);
   static const Color dividerDark = Color(0xFF424242);
@@ -70,9 +72,15 @@ class AppColors {
   );
   
   static LinearGradient darkBackgroundGradient = const LinearGradient(
-    colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+    colors: [Color(0xFF0F1419), Color(0xFF1A1F26)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
+  );
+  
+  static LinearGradient darkPrimaryGradient = const LinearGradient(
+    colors: [Color(0xFF26A69A), Color(0xFF4DD0E1)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
   
   static BoxShadow cardShadowLight = BoxShadow(

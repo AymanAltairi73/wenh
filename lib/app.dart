@@ -60,7 +60,7 @@ class _AppState extends State<App> {
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
         ],
-        initialRoute: '/role',
+        initialRoute: '/send',
             routes: {
               '/role': (_) => const RoleSelectionScreen(),
               '/': (_) => const CustomerHomeScreen(),

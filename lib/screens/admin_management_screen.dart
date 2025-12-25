@@ -33,9 +33,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: BlocBuilder<AdminCubit, AdminState>(
           builder: (context, state) {
             if (state is AdminsLoaded) {

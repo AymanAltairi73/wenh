@@ -48,9 +48,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           }
         },
         child: Container(
-          decoration: BoxDecoration(
-            gradient: AppColors.backgroundGradient,
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -96,28 +94,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [AppColors.cardShadowMedium],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'تسجيل دخول المدير',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).textTheme.titleLarge?.color,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'قم بتسجيل الدخول للوصول إلى لوحة التحكم',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
             textAlign: TextAlign.center,
           ),
@@ -140,7 +138,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 borderSide: const BorderSide(color: AppColors.primary, width: 2),
               ),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -181,7 +179,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 borderSide: const BorderSide(color: AppColors.primary, width: 2),
               ),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {

@@ -87,28 +87,47 @@ class ThemeCubit extends Cubit<ThemeState> {
   }
 
   static ThemeState _getDarkTheme() {
+    const darkBackground = Color(0xFF0F1419);
+    const darkSurface = Color(0xFF1A1F26);
+    const darkCard = Color(0xFF252D38);
+    const tealAccent = Color(0xFF4DD0E1);
+    const tealPrimary = Color(0xFF26A69A);
+    
     return ThemeState(
       themeData: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.dark,
+        scaffoldBackgroundColor: darkBackground,
+        colorScheme: ColorScheme.dark(
+          primary: tealPrimary,
+          secondary: tealAccent,
+          surface: darkSurface,
+          background: darkBackground,
+          error: const Color(0xFFEF5350),
+          onPrimary: Colors.white,
+          onSecondary: Colors.black,
+          onSurface: const Color(0xFFE1E3E6),
+          onBackground: const Color(0xFFE1E3E6),
+          onError: Colors.white,
         ),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: darkSurface,
           foregroundColor: Colors.white,
+          iconTheme: IconThemeData(color: tealAccent),
         ),
         cardTheme: CardThemeData(
-          elevation: 6,
-          shadowColor: Colors.black.withOpacity(0.3),
+          color: darkCard,
+          elevation: 4,
+          shadowColor: Colors.black.withOpacity(0.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            elevation: 3,
+            backgroundColor: tealPrimary,
+            foregroundColor: Colors.white,
+            elevation: 2,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
@@ -116,15 +135,31 @@ class ThemeCubit extends Cubit<ThemeState> {
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.teal.shade300),
+            borderSide: const BorderSide(color: Color(0xFF37474F)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF37474F)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.teal.shade300, width: 2),
+            borderSide: const BorderSide(color: tealAccent, width: 2),
           ),
           filled: true,
-          fillColor: Colors.grey.shade800,
+          fillColor: const Color(0xFF1E2329),
+          labelStyle: const TextStyle(color: Color(0xFFB0BEC5)),
+          hintStyle: const TextStyle(color: Color(0xFF78909C)),
         ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFFE1E3E6)),
+          bodyMedium: TextStyle(color: Color(0xFFB0BEC5)),
+          bodySmall: TextStyle(color: Color(0xFF78909C)),
+          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          titleMedium: TextStyle(color: Colors.white),
+          titleSmall: TextStyle(color: Color(0xFFB0BEC5)),
+        ),
+        iconTheme: const IconThemeData(color: tealAccent),
+        dividerColor: const Color(0xFF37474F),
       ),
       appTheme: AppTheme.dark,
     );
