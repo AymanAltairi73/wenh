@@ -8,7 +8,7 @@ import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:intl/intl.dart';
 
 class EnhancedAdminProfile extends StatelessWidget {
-  const EnhancedAdminProfile({super.key});
+   EnhancedAdminProfile({super.key});
 
   @override
   Widget build(BuildContext context) {

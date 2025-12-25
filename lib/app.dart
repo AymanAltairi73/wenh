@@ -6,6 +6,7 @@ import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
+import 'services/firebase_service.dart';
 import 'screens/role_selection.dart';
 import 'screens/customer_home.dart';
 import 'screens/send_request_screen.dart';
@@ -21,8 +22,19 @@ import 'screens/customer_profile_screen.dart';
 import 'screens/worker_profile_screen.dart';
 import 'screens/admin_profile_screen.dart';
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    LocalStorageService.initializeSampleData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +76,6 @@ class App extends StatelessWidget {
               '/customer-profile': (_) => const CustomerProfileScreen(),
               '/worker-profile': (_) => const WorkerProfileScreen(),
               '/admin-profile': (_) => const AdminProfileScreen(),
-              '/enhanced-admin-profile': (_) => const EnhancedAdminProfile(),
             },
           );
         },

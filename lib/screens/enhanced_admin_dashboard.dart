@@ -110,7 +110,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
             ),
           ),
           IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/enhanced-admin-profile'),
+            onPressed: () => Navigator.pushNamed(context, '/admin-profile'),
             icon: const Icon(AppIcons.profile),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.primary.withOpacity(0.1),
