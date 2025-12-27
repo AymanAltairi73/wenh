@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
-import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/widgets/custom_button.dart';
 
 class RegisterScreen extends StatefulWidget {
