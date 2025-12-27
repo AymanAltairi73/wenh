@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenh/core/theme/app_colors.dart';
@@ -41,11 +42,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_onboarding', true);
-    
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/role');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_seen_onboarding', true);
+      
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/role');
+    } catch (e, stackTrace) {
+      debugPrint('[OnboardingScreen] _completeOnboarding error: $e');
+      debugPrint('[OnboardingScreen] stackTrace: $stackTrace');
+    }
   }
 
   @override

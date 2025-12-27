@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/worker_model.dart';
 import '../services/firebase_auth_service.dart';
@@ -17,7 +18,9 @@ class AuthCubit extends Cubit<AuthState> {
         current = worker;
         emit(Authenticated(worker));
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AuthCubit] login error: $e');
+      debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
       emit(const AuthInitial());
     }
@@ -31,7 +34,9 @@ class AuthCubit extends Cubit<AuthState> {
         current = worker;
         emit(Authenticated(worker));
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AuthCubit] loginWithGoogle error: $e');
+      debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
       emit(const AuthInitial());
     }
@@ -50,7 +55,9 @@ class AuthCubit extends Cubit<AuthState> {
         name: name,
       );
       await login(email, password);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AuthCubit] register error: $e');
+      debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
       emit(const AuthInitial());
     }

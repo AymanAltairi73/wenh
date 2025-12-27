@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -327,7 +328,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         );
         Navigator.pushReplacementNamed(context, '/admin-login');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AdminRegisterScreen] _handleRegister error: $e');
+      debugPrint('[AdminRegisterScreen] stackTrace: $stackTrace');
       if (mounted) {
         ProfessionalDialog.showError(
           context: context,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
@@ -25,16 +26,28 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
   }
 
   void _login() {
-    if ((_formKey.currentState?.validate() ?? false)) {
-      context.read<AuthCubit>().login(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
+    try {
+      if ((_formKey.currentState?.validate() ?? false)) {
+        debugPrint('[WorkerLoginScreen] Attempting login for: ${_emailController.text.trim()}');
+        context.read<AuthCubit>().login(
+              _emailController.text.trim(),
+              _passwordController.text,
+            );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[WorkerLoginScreen] _login error: $e');
+      debugPrint('[WorkerLoginScreen] stackTrace: $stackTrace');
     }
   }
 
   void _loginWithGoogle() {
-    context.read<AuthCubit>().loginWithGoogle();
+    try {
+      debugPrint('[WorkerLoginScreen] Attempting Google login');
+      context.read<AuthCubit>().loginWithGoogle();
+    } catch (e, stackTrace) {
+      debugPrint('[WorkerLoginScreen] _loginWithGoogle error: $e');
+      debugPrint('[WorkerLoginScreen] stackTrace: $stackTrace');
+    }
   }
 
   @override

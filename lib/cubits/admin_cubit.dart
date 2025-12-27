@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/admin_model.dart';
 import '../services/firebase_auth_service.dart';
@@ -20,7 +21,9 @@ class AdminCubit extends Cubit<AdminState> {
         emit(const AdminError('الحساب غير نشط أو غير موجود'));
         emit(const AdminInitial());
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AdminCubit] login error: $e');
+      debugPrint('[AdminCubit] stackTrace: $stackTrace');
       emit(AdminError(e.toString()));
       emit(const AdminInitial());
     }
@@ -37,7 +40,9 @@ class AdminCubit extends Cubit<AdminState> {
         emit(const AdminError('الحساب غير نشط أو غير موجود'));
         emit(const AdminInitial());
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[AdminCubit] loginWithGoogle error: $e');
+      debugPrint('[AdminCubit] stackTrace: $stackTrace');
       emit(AdminError(e.toString()));
       emit(const AdminInitial());
     }

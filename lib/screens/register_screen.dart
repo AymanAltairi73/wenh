@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
@@ -30,12 +31,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    context.read<AuthCubit>().register(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      name: _nameController.text.trim(),
-    );
+    try {
+      if (!(_formKey.currentState?.validate() ?? false)) return;
+      debugPrint('[RegisterScreen] Attempting registration for: ${_emailController.text.trim()}');
+      context.read<AuthCubit>().register(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+      );
+    } catch (e, stackTrace) {
+      debugPrint('[RegisterScreen] _submit error: $e');
+      debugPrint('[RegisterScreen] stackTrace: $stackTrace');
+    }
   }
 
   @override

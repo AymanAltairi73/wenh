@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
@@ -24,16 +25,22 @@ class RequestPreviewScreen extends StatelessWidget {
   });
 
   void _submitRequest(BuildContext context) {
-    final combinedType = '$category - $subType';
-    context.read<RequestCubit>().addRequest(
-          type: combinedType,
-          area: area,
-          description: description,
-        );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
-    );
-    Navigator.pushNamedAndRemoveUntil(context, '/worker', (route) => false);
+    try {
+      final combinedType = '$category - $subType';
+      debugPrint('[RequestPreviewScreen] Submitting request: $combinedType in $area');
+      context.read<RequestCubit>().addRequest(
+            type: combinedType,
+            area: area,
+            description: description,
+          );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
+      );
+      Navigator.pushNamedAndRemoveUntil(context, '/worker', (route) => false);
+    } catch (e, stackTrace) {
+      debugPrint('[RequestPreviewScreen] _submitRequest error: $e');
+      debugPrint('[RequestPreviewScreen] stackTrace: $stackTrace');
+    }
   }
 
   @override

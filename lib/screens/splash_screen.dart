@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenh/core/theme/app_colors.dart';
@@ -42,19 +43,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 3));
-    
-    if (!mounted) return;
+    try {
+      await Future.delayed(const Duration(seconds: 3));
+      
+      if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (hasSeenOnboarding) {
-      Navigator.pushReplacementNamed(context, '/role');
-    } else {
-      Navigator.pushReplacementNamed(context, '/onboarding');
+      if (hasSeenOnboarding) {
+        Navigator.pushReplacementNamed(context, '/role');
+      } else {
+        Navigator.pushReplacementNamed(context, '/onboarding');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[SplashScreen] _navigateToNext error: $e');
+      debugPrint('[SplashScreen] stackTrace: $stackTrace');
     }
   }
 

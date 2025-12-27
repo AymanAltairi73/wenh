@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/admin_cubit.dart';
@@ -23,7 +24,13 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
   @override
   void initState() {
     super.initState();
-    context.read<RequestCubit>().getRequests();
+    try {
+      debugPrint('[EnhancedAdminDashboard] Initializing and fetching requests');
+      context.read<RequestCubit>().getRequests();
+    } catch (e, stackTrace) {
+      debugPrint('[EnhancedAdminDashboard] initState error: $e');
+      debugPrint('[EnhancedAdminDashboard] stackTrace: $stackTrace');
+    }
   }
 
   @override

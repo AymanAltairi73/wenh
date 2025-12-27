@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/admin_cubit.dart';
@@ -256,17 +257,29 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+    try {
+      if (!_formKey.currentState!.validate()) {
+        return;
+      }
+
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      debugPrint('[AdminLoginScreen] Attempting login for: $email');
+      await context.read<AdminCubit>().login(email, password);
+    } catch (e, stackTrace) {
+      debugPrint('[AdminLoginScreen] _handleLogin error: $e');
+      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
     }
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    await context.read<AdminCubit>().login(email, password);
   }
 
   Future<void> _handleGoogleLogin() async {
-    await context.read<AdminCubit>().loginWithGoogle();
+    try {
+      debugPrint('[AdminLoginScreen] Attempting Google login');
+      await context.read<AdminCubit>().loginWithGoogle();
+    } catch (e, stackTrace) {
+      debugPrint('[AdminLoginScreen] _handleGoogleLogin error: $e');
+      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
+    }
   }
 }

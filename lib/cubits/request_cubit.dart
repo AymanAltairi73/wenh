@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/request_model.dart';
@@ -25,7 +26,9 @@ class RequestCubit extends Cubit<RequestState> {
             .toList();
         emit(RequestLoaded(requests));
       },
-      onError: (error) {
+      onError: (error, stackTrace) {
+        debugPrint('[RequestCubit] getRequests error: $error');
+        debugPrint('[RequestCubit] stackTrace: $stackTrace');
         emit(RequestError('فشل تحميل الطلبات: ${error.toString()}'));
       },
     );
@@ -45,7 +48,9 @@ class RequestCubit extends Cubit<RequestState> {
         status: 'new',
       );
       await _firestore.collection('requests').add(request.toFirestore());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[RequestCubit] addRequest error: $e');
+      debugPrint('[RequestCubit] stackTrace: $stackTrace');
       emit(RequestError('فشل إضافة الطلب: ${e.toString()}'));
     }
   }
@@ -60,7 +65,9 @@ class RequestCubit extends Cubit<RequestState> {
         'takenBy': workerName,
         'takenAt': FieldValue.serverTimestamp(),
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[RequestCubit] takeRequest error: $e');
+      debugPrint('[RequestCubit] stackTrace: $stackTrace');
       emit(RequestError('فشل استلام الطلب: ${e.toString()}'));
     }
   }
@@ -79,7 +86,9 @@ class RequestCubit extends Cubit<RequestState> {
         updateData['completedAt'] = FieldValue.serverTimestamp();
       }
       await _firestore.collection('requests').doc(id).update(updateData);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[RequestCubit] updateStatus error: $e');
+      debugPrint('[RequestCubit] stackTrace: $stackTrace');
       emit(RequestError('فشل تحديث حالة الطلب: ${e.toString()}'));
     }
   }
@@ -87,7 +96,9 @@ class RequestCubit extends Cubit<RequestState> {
   Future<void> deleteRequest(String id) async {
     try {
       await _firestore.collection('requests').doc(id).delete();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[RequestCubit] deleteRequest error: $e');
+      debugPrint('[RequestCubit] stackTrace: $stackTrace');
       emit(RequestError('فشل حذف الطلب: ${e.toString()}'));
     }
   }

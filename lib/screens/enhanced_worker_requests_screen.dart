@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
@@ -30,17 +31,22 @@ class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScr
   }
 
   Future<void> _initializeFilter() async {
-    await _filterService.init();
-    final lastFilter = await _filterService.getLastFilter();
-    if (lastFilter != null && mounted) {
+    try {
+      await _filterService.init();
+      final lastFilter = await _filterService.getLastFilter();
+      if (lastFilter != null && mounted) {
+        setState(() {
+          _currentFilter = lastFilter;
+          _searchController.text = lastFilter.searchQuery;
+        });
+      }
       setState(() {
-        _currentFilter = lastFilter;
-        _searchController.text = lastFilter.searchQuery;
+        _isInitialized = true;
       });
+    } catch (e, stackTrace) {
+      debugPrint('[EnhancedWorkerRequestsScreen] _initializeFilter error: $e');
+      debugPrint('[EnhancedWorkerRequestsScreen] stackTrace: $stackTrace');
     }
-    setState(() {
-      _isInitialized = true;
-    });
   }
 
   @override

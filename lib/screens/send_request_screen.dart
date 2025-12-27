@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wenh/screens/request_preview_screen.dart';
@@ -164,8 +165,13 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   }
 
   Future<void> _initDraftService() async {
-    await _draftService.init();
-    _loadDraft();
+    try {
+      await _draftService.init();
+      _loadDraft();
+    } catch (e, stackTrace) {
+      debugPrint('[SendRequestScreen] _initDraftService error: $e');
+      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
+    }
   }
 
   void _initializeFilters() {
@@ -174,38 +180,48 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   }
 
   Future<void> _loadDraft() async {
-    final draft = await _draftService.getDraft(_draftId);
-    if (draft != null && !draft.isEmpty) {
-      setState(() {
-        _selectedCategory = draft.category;
-        _selectedSubType = draft.subType;
-        _selectedArea = draft.area;
-        _descriptionController.text = draft.description ?? '';
-        _selectedPriority = draft.priority ?? 'normal';
-        if (draft.budget != null) {
-          _budgetController.text = draft.budget.toString();
-        }
-        _selectedTime = draft.preferredTime;
-      });
+    try {
+      final draft = await _draftService.getDraft(_draftId);
+      if (draft != null && !draft.isEmpty) {
+        setState(() {
+          _selectedCategory = draft.category;
+          _selectedSubType = draft.subType;
+          _selectedArea = draft.area;
+          _descriptionController.text = draft.description ?? '';
+          _selectedPriority = draft.priority ?? 'normal';
+          if (draft.budget != null) {
+            _budgetController.text = draft.budget.toString();
+          }
+          _selectedTime = draft.preferredTime;
+        });
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[SendRequestScreen] _loadDraft error: $e');
+      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
     }
   }
 
   Future<void> _saveDraft() async {
-    final draft = RequestDraftModel(
-      id: _draftId,
-      category: _selectedCategory,
-      subType: _selectedSubType,
-      area: _selectedArea,
-      description: _descriptionController.text,
-      priority: _selectedPriority,
-      budget: _budgetController.text.isEmpty
-          ? null
-          : double.tryParse(_budgetController.text),
-      preferredTime: _selectedTime,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await _draftService.saveDraft(draft);
+    try {
+      final draft = RequestDraftModel(
+        id: _draftId,
+        category: _selectedCategory,
+        subType: _selectedSubType,
+        area: _selectedArea,
+        description: _descriptionController.text,
+        priority: _selectedPriority,
+        budget: _budgetController.text.isEmpty
+            ? null
+            : double.tryParse(_budgetController.text),
+        preferredTime: _selectedTime,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await _draftService.saveDraft(draft);
+    } catch (e, stackTrace) {
+      debugPrint('[SendRequestScreen] _saveDraft error: $e');
+      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
+    }
   }
 
   void _filterCategories(String query) {
