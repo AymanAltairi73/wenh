@@ -42,7 +42,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
         child: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            Navigator.pushReplacementNamed(context, '/worker');
+            Navigator.pushReplacementNamed(context, '/enhanced-worker');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
           }
@@ -123,6 +123,42 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                           child: TextButton(
                             onPressed: () => Navigator.pushNamed(context, '/register'),
                             child: const Text('إنشاء حساب جديد'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'حساب تجريبي',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'البريد: worker@wenh.com',
+                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                              ),
+                              Text(
+                                'كلمة المرور: 123456',
+                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                              ),
+                            ],
                           ),
                         ),
                       ],

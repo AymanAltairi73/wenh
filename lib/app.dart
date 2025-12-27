@@ -7,8 +7,10 @@ import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
 import 'services/firebase_service.dart';
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/role_selection.dart';
-import 'screens/customer_home.dart';
+// import 'screens/customer_home.dart';
 import 'screens/enhanced_customer_home_screen.dart';
 import 'screens/send_request_screen.dart';
 import 'screens/worker_login.dart';
@@ -62,10 +64,12 @@ class _AppState extends State<App> {
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
         ],
-        initialRoute: '/send',
+        initialRoute: '/splash',
             routes: {
+              '/splash': (_) => const SplashScreen(),
+              '/onboarding': (_) => const OnboardingScreen(),
               '/role': (_) => const RoleSelectionScreen(),
-              '/': (_) => const CustomerHomeScreen(),
+              //'/': (_) => const CustomerHomeScreen(),
               '/enhanced-home': (_) => const EnhancedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
