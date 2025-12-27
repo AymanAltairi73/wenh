@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "753290808180",
+    "project_id": "wenh-c9176",
+    "storage_bucket": "wenh-c9176.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:753290808180:android:fdcf4a30b2fbe202d5ba21",
+        "android_client_info": {
+          "package_name": "com.example.wenh"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "753290808180-la77cfqnful64v9f0ochn38od8p97v2k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAivnx88y1RnbqXjaB_ElYM9JIA8hShIec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "753290808180-la77cfqnful64v9f0ochn38od8p97v2k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
