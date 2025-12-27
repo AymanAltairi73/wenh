@@ -13,8 +13,8 @@ class WorkerLoginScreen extends StatefulWidget {
 
 class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'worker@wenh.com');
-  final _passwordController = TextEditingController(text: '123456');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscure = true;
 
   @override
@@ -31,6 +31,10 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
             _passwordController.text,
           );
     }
+  }
+
+  void _loginWithGoogle() {
+    context.read<AuthCubit>().loginWithGoogle();
   }
 
   @override
@@ -118,47 +122,42 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                             icon: Icons.login,
                           );
                         }),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.grey.shade400)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text('أو', style: TextStyle(color: Colors.grey.shade600)),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey.shade400)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        BlocBuilder<AuthCubit, AuthState>(builder: (context, state) {
+                          final loading = state is AuthLoading;
+                          return OutlinedButton.icon(
+                            onPressed: loading ? null : _loginWithGoogle,
+                            icon: Image.asset(
+                              'assets/images/logo.png',
+                              height: 24,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                            ),
+                            label: const Text('تسجيل الدخول بواسطة Google'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 12),
                         Center(
                           child: TextButton(
                             onPressed: () => Navigator.pushNamed(context, '/register'),
                             child: const Text('إنشاء حساب جديد'),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'حساب تجريبي',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'البريد: worker@wenh.com',
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                              ),
-                              Text(
-                                'كلمة المرور: 123456',
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                              ),
-                            ],
                           ),
                         ),
                       ],

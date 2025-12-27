@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wenh/cubits/auth_cubit.dart';
+import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/widgets/custom_button.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -28,10 +31,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم إنشاء الحساب (تجريبي)')),
+    context.read<AuthCubit>().register(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      name: _nameController.text.trim(),
     );
-    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override

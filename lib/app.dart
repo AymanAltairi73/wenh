@@ -17,6 +17,7 @@ import 'screens/worker_requests.dart';
 import 'screens/enhanced_worker_requests_screen.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/admin_login_screen.dart';
+import 'screens/admin_register_screen.dart';
 import 'screens/enhanced_admin_dashboard.dart';
 import 'screens/admin_management_screen.dart';
 import 'screens/register_screen.dart';
@@ -76,6 +77,7 @@ class _AppState extends State<App> {
               '/enhanced-worker': (_) => const EnhancedWorkerRequestsScreen(),
               '/admin': (_) => const AdminDashboardScreen(),
               '/admin-login': (_) => const AdminLoginScreen(),
+              '/admin-register': (_) => const AdminRegisterScreen(),
               '/enhanced-admin': (_) => const EnhancedAdminDashboard(),
               '/admin-management': (_) => const AdminManagementScreen(),
               '/settings': (_) => const SettingsScreen(),

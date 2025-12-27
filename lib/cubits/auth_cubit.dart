@@ -23,6 +23,20 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> loginWithGoogle() async {
+    emit(const AuthLoading());
+    try {
+      final worker = await _authService.loginWorkerWithGoogle();
+      if (worker != null) {
+        current = worker;
+        emit(Authenticated(worker));
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      emit(const AuthInitial());
+    }
+  }
+
   Future<void> register({
     required String email,
     required String password,

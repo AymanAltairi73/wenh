@@ -26,6 +26,23 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
+  Future<void> loginWithGoogle() async {
+    emit(const AdminLoading());
+    try {
+      final admin = await _authService.loginAdminWithGoogle();
+      if (admin != null && admin.isActive) {
+        currentAdmin = admin;
+        emit(AdminAuthenticated(admin));
+      } else {
+        emit(const AdminError('الحساب غير نشط أو غير موجود'));
+        emit(const AdminInitial());
+      }
+    } catch (e) {
+      emit(AdminError(e.toString()));
+      emit(const AdminInitial());
+    }
+  }
+
   Future<void> logout() async {
     await _authService.logout();
     currentAdmin = null;

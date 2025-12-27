@@ -19,7 +19,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
-  bool _isDemo = false;
 
   @override
   void dispose() {
@@ -61,8 +60,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       _buildLogo(),
                       const SizedBox(height: 48),
                       _buildLoginCard(),
-                      const SizedBox(height: 24),
-                      _buildDemoSection(),
                     ],
                   ),
                 ),
@@ -218,75 +215,41 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDemoSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [AppColors.cardShadowLight],
-      ),
-      child: Column(
-        children: [
+          const SizedBox(height: 20),
           Row(
             children: [
-              const Icon(
-                AppIcons.info,
-                color: AppColors.info,
-                size: 20,
+              Expanded(child: Divider(color: Colors.grey.shade300)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('أو', style: TextStyle(color: Colors.grey.shade600)),
               ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'حساب تجريبي',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              Switch(
-                value: _isDemo,
-                onChanged: (value) {
-                  setState(() {
-                    _isDemo = value;
-                    if (_isDemo) {
-                      _emailController.text = 'demo@wenh.com';
-                      _passwordController.text = '123456';
-                    } else {
-                      _emailController.clear();
-                      _passwordController.clear();
-                    }
-                  });
-                },
-                activeColor: AppColors.primary,
-              ),
+              Expanded(child: Divider(color: Colors.grey.shade300)),
             ],
           ),
-          if (_isDemo) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'سيتم إنشاء حساب تجريبي تلقائياً إذا لم يكن موجوداً',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.info,
-                ),
-                textAlign: TextAlign.center,
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: _handleGoogleLogin,
+            icon: const Icon(Icons.g_mobiledata, size: 28, color: AppColors.primary),
+            label: const Text(
+              'تسجيل الدخول بواسطة Google',
+              style: TextStyle(fontSize: 16),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: Colors.grey.shade300),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-          ],
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/admin-register'),
+            child: const Text(
+              'إنشاء حساب مدير جديد',
+              style: TextStyle(fontSize: 15),
+            ),
+          ),
         ],
       ),
     );
@@ -301,5 +264,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     final password = _passwordController.text;
 
     await context.read<AdminCubit>().login(email, password);
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    await context.read<AdminCubit>().loginWithGoogle();
   }
 }

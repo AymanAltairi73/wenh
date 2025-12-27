@@ -187,9 +187,10 @@ class _DialogContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [AppColors.cardShadowHeavy],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           Container(
             width: 80,
             height: 80,
@@ -214,14 +215,18 @@ class _DialogContent extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          Text(
-            message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
+          Flexible(
+            child: SingleChildScrollView(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           if (type == DialogType.confirm) ...[
@@ -305,6 +310,7 @@ class _DialogContent extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }
