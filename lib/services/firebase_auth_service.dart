@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/worker_model.dart';
 import '../models/admin_model.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? get currentUser => _auth.currentUser;
 
@@ -117,8 +119,133 @@ class FirebaseAuthService {
     }
   }
 
+  Future<WorkerModel?> loginWorkerWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        throw Exception('تم إلغاء تسجيل الدخول');
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user!;
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      if (!userDoc.exists) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'email': user.email,
+          'name': user.displayName ?? 'مستخدم',
+          'role': 'worker',
+          'subscription': false,
+          'subscriptionEnd': Timestamp.fromDate(DateTime.now()),
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLogin': FieldValue.serverTimestamp(),
+        });
+
+        return WorkerModel(
+          uid: user.uid,
+          name: user.displayName ?? 'مستخدم',
+          email: user.email!,
+          subscription: false,
+          subscriptionEnd: DateTime.now(),
+        );
+      }
+
+      final data = userDoc.data()!;
+
+      if (data['role'] != 'worker') {
+        await _auth.signOut();
+        await _googleSignIn.signOut();
+        throw Exception('هذا الحساب ليس حساب عامل');
+      }
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+
+      return WorkerModel(
+        uid: user.uid,
+        name: data['name'],
+        email: data['email'],
+        subscription: data['subscription'] ?? false,
+        subscriptionEnd: (data['subscriptionEnd'] as Timestamp).toDate(),
+      );
+    } catch (e) {
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      }
+      rethrow;
+    }
+  }
+
+  Future<AdminModel?> loginAdminWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        throw Exception('تم إلغاء تسجيل الدخول');
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user!;
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      if (!userDoc.exists) {
+        await _auth.signOut();
+        await _googleSignIn.signOut();
+        throw Exception('المستخدم غير موجود. يجب إنشاء حساب مدير أولاً');
+      }
+
+      final data = userDoc.data()!;
+
+      if (data['role'] != 'admin') {
+        await _auth.signOut();
+        await _googleSignIn.signOut();
+        throw Exception('هذا الحساب ليس حساب مدير');
+      }
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastLogin': FieldValue.serverTimestamp(),
+      });
+
+      return AdminModel.fromJson({
+        'id': user.uid,
+        'name': data['name'],
+        'email': data['email'],
+        'role': data['adminRole'] ?? 'AdminRole.admin',
+        'isActive': data['isActive'] ?? true,
+        'createdAt': (data['createdAt'] as Timestamp).toDate().toIso8601String(),
+        'lastLogin': DateTime.now().toIso8601String(),
+        'permissions': data['permissions'] ?? {},
+      });
+    } catch (e) {
+      if (e is FirebaseAuthException) {
+        throw _handleAuthException(e);
+      }
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     await _auth.signOut();
+    await _googleSignIn.signOut();
   }
 
   String _handleAuthException(FirebaseAuthException e) {
