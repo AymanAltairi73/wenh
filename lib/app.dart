@@ -6,7 +6,6 @@ import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
-import 'services/firebase_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/role_selection.dart';
@@ -37,7 +36,6 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    LocalStorageService.initializeSampleData();
   }
 
   @override

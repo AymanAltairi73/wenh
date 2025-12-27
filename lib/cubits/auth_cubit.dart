@@ -1,30 +1,49 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wenh/models/worker_model.dart';
+import '../models/worker_model.dart';
+import '../services/firebase_auth_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(const AuthInitial());
 
+  final FirebaseAuthService _authService = FirebaseAuthService();
   WorkerModel? current;
 
   Future<void> login(String email, String password) async {
     emit(const AuthLoading());
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (email.trim() == 'worker@wenh.com' && password == '123456') {
-      current = WorkerModel(
-        name: 'عامل تجريبي',
-        email: email.trim(),
-        subscription: true,
-        subscriptionEnd: DateTime.now().add(const Duration(days: 7)),
-      );
-      emit(Authenticated(current!));
-    } else {
-      emit(const AuthError('البريد الإلكتروني أو كلمة المرور غير صحيحة'));
+    try {
+      final worker = await _authService.loginWorker(email, password);
+      if (worker != null) {
+        current = worker;
+        emit(Authenticated(worker));
+      }
+    } catch (e) {
+      emit(AuthError(e.toString()));
       emit(const AuthInitial());
     }
   }
 
-  void logout() {
+  Future<void> register({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    emit(const AuthLoading());
+    try {
+      await _authService.registerWorker(
+        email: email,
+        password: password,
+        name: name,
+      );
+      await login(email, password);
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      emit(const AuthInitial());
+    }
+  }
+
+  Future<void> logout() async {
+    await _authService.logout();
     current = null;
     emit(const AuthInitial());
   }

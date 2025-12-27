@@ -6,7 +6,6 @@ import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/models/admin_model.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
-import 'package:wenh/widgets/loading_dialog.dart';
 
 class AdminManagementScreen extends StatefulWidget {
   const AdminManagementScreen({super.key});
@@ -16,12 +15,6 @@ class AdminManagementScreen extends StatefulWidget {
 }
 
 class _AdminManagementScreenState extends State<AdminManagementScreen> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<AdminCubit>().loadAdmins();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -262,29 +255,15 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   }
 
   Future<void> _toggleAdminStatus(AdminModel admin) async {
-    final updatedAdmin = admin.copyWith(isActive: !admin.isActive);
-    await context.read<AdminCubit>().updateAdmin(updatedAdmin);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('هذه الميزة غير متاحة حالياً')),
+    );
   }
 
   Future<void> _deleteAdmin(AdminModel admin) async {
-    final result = await ProfessionalDialog.showConfirm(
-      context: context,
-      title: 'حذف المدير',
-      message: 'هل أنت متأكد من حذف المدير "${admin.name}"؟',
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('هذه الميزة غير متاحة حالياً')),
     );
-
-    if (result == true && mounted) {
-      LoadingDialog.show(context, message: 'جاري الحذف...');
-      await context.read<AdminCubit>().deleteAdmin(admin.id);
-      if (mounted) {
-        LoadingDialog.hide(context);
-        await ProfessionalDialog.showSuccess(
-          context: context,
-          title: 'تم الحذف',
-          message: 'تم حذف المدير بنجاح',
-        );
-      }
-    }
   }
 
   Future<void> _showAddAdminDialog() async {
@@ -435,19 +414,9 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         return;
       }
 
-      LoadingDialog.show(context, message: 'جاري إنشاء المدير...');
-      await context.read<AdminCubit>().createAdmin(
-            email: emailController.text.trim(),
-            password: passwordController.text,
-            name: nameController.text.trim(),
-            role: selectedRole,
-          );
       if (mounted) {
-        LoadingDialog.hide(context);
-        await ProfessionalDialog.showSuccess(
-          context: context,
-          title: 'تم الإنشاء',
-          message: 'تم إنشاء المدير بنجاح',
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('هذه الميزة غير متاحة حالياً')),
         );
       }
     }

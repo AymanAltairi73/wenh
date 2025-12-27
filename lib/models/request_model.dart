@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RequestModel extends Equatable {
   final String id;
@@ -17,6 +18,30 @@ class RequestModel extends Equatable {
     this.takenBy,
   });
 
+  factory RequestModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return RequestModel(
+      id: doc.id,
+      type: data['type'] ?? '',
+      area: data['area'] ?? '',
+      description: data['description'] ?? '',
+      status: data['status'] ?? 'new',
+      takenBy: data['takenBy'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'type': type,
+      'area': area,
+      'description': description,
+      'status': status,
+      'createdAt': FieldValue.serverTimestamp(),
+      'createdBy': 'anonymous',
+      'takenBy': takenBy,
+    };
+  }
+
   RequestModel copyWith({
     String? id,
     String? type,
@@ -32,20 +57,6 @@ class RequestModel extends Equatable {
       description: description ?? this.description,
       status: status ?? this.status,
       takenBy: takenBy ?? this.takenBy,
-    );
-  }
-
-  static RequestModel create({
-    required String type,
-    required String area,
-    required String description,
-  }) {
-    return RequestModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      type: type,
-      area: area,
-      description: description,
-      status: 'new',
     );
   }
 

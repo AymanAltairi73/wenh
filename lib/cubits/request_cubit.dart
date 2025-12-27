@@ -1,20 +1,28 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wenh/models/request_model.dart';
-import 'package:wenh/services/firebase_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/request_model.dart';
 import 'request_state.dart';
 
 class RequestCubit extends Cubit<RequestState> {
   RequestCubit() : super(const RequestInitial());
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   StreamSubscription? _requestsSubscription;
 
   void getRequests() {
     emit(const RequestLoading());
     
     _requestsSubscription?.cancel();
-    _requestsSubscription = LocalStorageService.getRequestsStream().listen(
-      (requests) {
+    _requestsSubscription = _firestore
+        .collection('requests')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final requests = snapshot.docs
+            .map((doc) => RequestModel.fromFirestore(doc))
+            .toList();
         emit(RequestLoaded(requests));
       },
       onError: (error) {
@@ -29,20 +37,29 @@ class RequestCubit extends Cubit<RequestState> {
     required String description,
   }) async {
     try {
-      final req = RequestModel.create(type: type, area: area, description: description);
-      await LocalStorageService.addRequest(req);
+      final request = RequestModel(
+        id: '',
+        type: type,
+        area: area,
+        description: description,
+        status: 'new',
+      );
+      await _firestore.collection('requests').add(request.toFirestore());
     } catch (e) {
       emit(RequestError('فشل إضافة الطلب: ${e.toString()}'));
     }
   }
 
-  Future<void> takeRequest({required String id, required String workerName}) async {
+  Future<void> takeRequest({
+    required String id,
+    required String workerName,
+  }) async {
     try {
-      await LocalStorageService.updateRequestStatus(
-        id: id,
-        status: 'taken',
-        takenBy: workerName,
-      );
+      await _firestore.collection('requests').doc(id).update({
+        'status': 'taken',
+        'takenBy': workerName,
+        'takenAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       emit(RequestError('فشل استلام الطلب: ${e.toString()}'));
     }
@@ -54,11 +71,14 @@ class RequestCubit extends Cubit<RequestState> {
     String? takenBy,
   }) async {
     try {
-      await LocalStorageService.updateRequestStatus(
-        id: id,
-        status: status,
-        takenBy: takenBy,
-      );
+      final updateData = <String, dynamic>{'status': status};
+      if (takenBy != null) {
+        updateData['takenBy'] = takenBy;
+      }
+      if (status == 'completed') {
+        updateData['completedAt'] = FieldValue.serverTimestamp();
+      }
+      await _firestore.collection('requests').doc(id).update(updateData);
     } catch (e) {
       emit(RequestError('فشل تحديث حالة الطلب: ${e.toString()}'));
     }
@@ -66,7 +86,7 @@ class RequestCubit extends Cubit<RequestState> {
 
   Future<void> deleteRequest(String id) async {
     try {
-      await LocalStorageService.deleteRequest(id);
+      await _firestore.collection('requests').doc(id).delete();
     } catch (e) {
       emit(RequestError('فشل حذف الطلب: ${e.toString()}'));
     }

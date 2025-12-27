@@ -300,10 +300,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (_isDemo) {
-      await context.read<AdminCubit>().createDemoAdmin(email, password);
-    } else {
-      await context.read<AdminCubit>().login(email, password);
-    }
+    await context.read<AdminCubit>().login(email, password);
   }
 }
