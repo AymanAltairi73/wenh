@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
@@ -36,7 +35,7 @@ class RequestPreviewScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
       );
-      Navigator.pushNamedAndRemoveUntil(context, '/worker', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/customer', (route) => false);
     } catch (e, stackTrace) {
       debugPrint('[RequestPreviewScreen] _submitRequest error: $e');
       debugPrint('[RequestPreviewScreen] stackTrace: $stackTrace');

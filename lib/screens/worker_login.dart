@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
@@ -59,7 +58,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
         child: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            Navigator.pushReplacementNamed(context, '/enhanced-worker');
+            Navigator.pushReplacementNamed(context, '/worker');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
           }

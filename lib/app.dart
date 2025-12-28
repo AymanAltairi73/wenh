@@ -2,29 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
+
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/role_selection.dart';
-// import 'screens/customer_home.dart';
 import 'screens/enhanced_customer_home_screen.dart';
 import 'screens/send_request_screen.dart';
 import 'screens/worker_login.dart';
-import 'screens/worker_requests.dart';
 import 'screens/enhanced_worker_requests_screen.dart';
-import 'screens/admin_dashboard.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/admin_register_screen.dart';
 import 'screens/enhanced_admin_dashboard.dart';
+import 'screens/enhanced_admin_profile.dart';
 import 'screens/admin_management_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/customer_profile_screen.dart';
 import 'screens/worker_profile_screen.dart';
-import 'screens/admin_profile_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -68,22 +67,19 @@ class _AppState extends State<App> {
               '/splash': (_) => const SplashScreen(),
               '/onboarding': (_) => const OnboardingScreen(),
               '/role': (_) => const RoleSelectionScreen(),
-              //'/': (_) => const CustomerHomeScreen(),
-              '/enhanced-home': (_) => const EnhancedCustomerHomeScreen(),
+              '/customer': (_) => const EnhancedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
               '/register': (_) => const RegisterScreen(),
-              '/worker': (_) => const WorkerRequestsScreen(),
-              '/enhanced-worker': (_) => const EnhancedWorkerRequestsScreen(),
-              '/admin': (_) => const AdminDashboardScreen(),
+              '/worker': (_) => const EnhancedWorkerRequestsScreen(),
+              '/admin': (_) => const EnhancedAdminDashboard(),
               '/admin-login': (_) => const AdminLoginScreen(),
               '/admin-register': (_) => const AdminRegisterScreen(),
-              '/enhanced-admin': (_) => const EnhancedAdminDashboard(),
               '/admin-management': (_) => const AdminManagementScreen(),
+              '/admin-profile': (_) => const EnhancedAdminProfile(),
               '/settings': (_) => const SettingsScreen(),
               '/customer-profile': (_) => const CustomerProfileScreen(),
               '/worker-profile': (_) => const WorkerProfileScreen(),
-              '/admin-profile': (_) => const AdminProfileScreen(),
             },
           );
         },

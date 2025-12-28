@@ -37,7 +37,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             LoadingDialog.show(context, message: 'جاري تسجيل الدخول...');
           } else if (state is AdminAuthenticated) {
             LoadingDialog.hide(context);
-            Navigator.of(context).pushReplacementNamed('/enhanced-admin');
+            Navigator.of(context).pushReplacementNamed('/admin');
           } else if (state is AdminError) {
             LoadingDialog.hide(context);
             ProfessionalDialog.showError(

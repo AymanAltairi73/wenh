@@ -69,7 +69,7 @@ class RoleSelectionScreen extends StatelessWidget {
                     CustomButton(
                       label: 'أنا زبون',
                       icon: Icons.person_outline,
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/enhanced-home'),
+                      onPressed: () => Navigator.pushReplacementNamed(context, '/customer'),
                     ),
                   ],
                 ),
