@@ -7,6 +7,7 @@ import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:wenh/models/admin_model.dart';
 import 'package:intl/intl.dart';
+import 'package:wenh/widgets/shimmer_loading.dart';
 
 class EnhancedAdminProfile extends StatelessWidget {
   const EnhancedAdminProfile({super.key});
@@ -25,13 +26,23 @@ class EnhancedAdminProfile extends StatelessWidget {
                   slivers: [
                     _buildAppBar(context, admin.name),
                     SliverToBoxAdapter(child: _buildProfileHeader(admin)),
-                    SliverToBoxAdapter(child: _buildPermissionsCard(admin)),
-                    SliverToBoxAdapter(child: _buildAccountInfo(admin)),
+                    SliverToBoxAdapter(
+                      child: _buildPermissionsCard(context, admin),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildAccountInfo(context, admin),
+                    ),
                     SliverToBoxAdapter(child: _buildQuickActions(context)),
                   ],
                 );
               }
-              return const Center(child: CircularProgressIndicator());
+              if (state is AdminLoading) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: ShimmerPlaceholder(height: 300, borderRadius: 24),
+                );
+              }
+              return const Center(child: Text('يرجى تسجيل الدخول'));
             },
           ),
         ),
@@ -76,15 +87,18 @@ class EnhancedAdminProfile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+          Hero(
+            tag: 'admin_avatar',
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+              ),
+              child: const Icon(AppIcons.admin, size: 50, color: Colors.white),
             ),
-            child: const Icon(AppIcons.admin, size: 50, color: Colors.white),
           ),
           const SizedBox(height: 16),
           Text(
@@ -131,18 +145,18 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionsCard(AdminModel admin) {
+  Widget _buildPermissionsCard(BuildContext context, AdminModel admin) {
     final permissions = admin.permissions.entries
         .where((MapEntry<String, bool> e) => e.value)
         .toList();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [AppColors.cardShadowLight],
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,10 +164,10 @@ class EnhancedAdminProfile extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   AppIcons.check,
@@ -161,18 +175,14 @@ class EnhancedAdminProfile extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               const Text(
                 'الصلاحيات',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           ...permissions.map((permission) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -187,10 +197,7 @@ class EnhancedAdminProfile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _getPermissionLabel(permission.key),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ),
                 ],
@@ -202,16 +209,16 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountInfo(AdminModel admin) {
+  Widget _buildAccountInfo(BuildContext context, AdminModel admin) {
     final dateFormat = DateFormat('yyyy/MM/dd - HH:mm', 'ar');
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [AppColors.cardShadowLight],
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,10 +226,10 @@ class EnhancedAdminProfile extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.info.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   AppIcons.info,
@@ -230,31 +237,28 @@ class EnhancedAdminProfile extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               const Text(
                 'معلومات الحساب',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildInfoRow(
             'تاريخ الإنشاء',
             dateFormat.format(admin.createdAt),
             AppIcons.calendar,
           ),
-          const SizedBox(height: 12),
-          if (admin.lastLogin != null)
+          if (admin.lastLogin != null) ...[
+            const SizedBox(height: 16),
             _buildInfoRow(
               'آخر تسجيل دخول',
               dateFormat.format(admin.lastLogin!),
               AppIcons.time,
             ),
-          const SizedBox(height: 12),
+          ],
+          const SizedBox(height: 16),
           _buildInfoRow(
             'حالة الحساب',
             admin.isActive ? 'نشط' : 'غير نشط',
@@ -287,13 +291,13 @@ class EnhancedAdminProfile extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppColors.textPrimary,
+                  color: valueColor,
                 ),
               ),
             ],
@@ -306,25 +310,22 @@ class EnhancedAdminProfile extends StatelessWidget {
   Widget _buildQuickActions(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [AppColors.cardShadowLight],
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'إجراءات سريعة',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           _buildActionButton(
+            context,
             'لوحة التحكم',
             AppIcons.dashboard,
             AppColors.primary,
@@ -332,6 +333,7 @@ class EnhancedAdminProfile extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
+            context,
             'إدارة المديرين',
             AppIcons.admin,
             AppColors.secondary,
@@ -339,6 +341,7 @@ class EnhancedAdminProfile extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildActionButton(
+            context,
             'الإعدادات',
             AppIcons.settings,
             AppColors.info,
@@ -350,6 +353,7 @@ class EnhancedAdminProfile extends StatelessWidget {
   }
 
   Widget _buildActionButton(
+    BuildContext context,
     String label,
     IconData icon,
     Color color,
@@ -357,20 +361,21 @@ class EnhancedAdminProfile extends StatelessWidget {
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.1)),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
@@ -385,7 +390,11 @@ class EnhancedAdminProfile extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(AppIcons.arrowForward, color: color, size: 20),
+            Icon(
+              AppIcons.arrowForward,
+              color: color.withOpacity(0.5),
+              size: 20,
+            ),
           ],
         ),
       ),

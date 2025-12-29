@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AnimatedButton extends StatefulWidget {
   final String label;
@@ -9,6 +10,7 @@ class AnimatedButton extends StatefulWidget {
   final Color? foregroundColor;
   final double? width;
   final double? height;
+  final double borderRadius;
 
   const AnimatedButton({
     super.key,
@@ -20,6 +22,7 @@ class AnimatedButton extends StatefulWidget {
     this.foregroundColor,
     this.width,
     this.height,
+    this.borderRadius = 20,
   });
 
   @override
@@ -30,21 +33,18 @@ class _AnimatedButtonState extends State<AnimatedButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _opacityAnimation = Tween<double>(begin: 1.0, end: 0.7).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.92,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -53,37 +53,60 @@ class _AnimatedButtonState extends State<AnimatedButton>
     super.dispose();
   }
 
+  void _handleTapDown(TapDownDetails details) {
+    if (widget.onPressed != null && !widget.isLoading) {
+      _controller.forward();
+      HapticFeedback.lightImpact();
+    }
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _controller.reverse();
+  }
+
+  void _handleTapCancel() {
+    _controller.reverse();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Opacity(
-            opacity: _opacityAnimation.value,
+    return GestureDetector(
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      onTap: widget.isLoading ? null : widget.onPressed,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
             child: SizedBox(
               width: widget.width ?? double.infinity,
-              height: widget.height ?? 48,
+              height: widget.height ?? 56,
               child: ElevatedButton(
-                onPressed: widget.isLoading ? null : widget.onPressed,
+                onPressed: null, // Handled by GestureDetector
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.backgroundColor,
-                  foregroundColor: widget.foregroundColor,
-                  elevation: 2,
-                  shadowColor: Colors.black.withOpacity(0.1),
+                  backgroundColor:
+                      widget.backgroundColor ?? Theme.of(context).primaryColor,
+                  foregroundColor: widget.foregroundColor ?? Colors.white,
+                  disabledBackgroundColor:
+                      widget.backgroundColor ?? Theme.of(context).primaryColor,
+                  disabledForegroundColor:
+                      widget.foregroundColor ?? Colors.white,
+                  elevation: 4,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(widget.borderRadius),
                   ),
+                  padding: EdgeInsets.zero,
                 ),
                 child: widget.isLoading
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            widget.foregroundColor ?? Colors.white,
+                            Colors.white,
                           ),
                         ),
                       )
@@ -91,23 +114,24 @@ class _AnimatedButtonState extends State<AnimatedButton>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (widget.icon != null) ...[
-                            Icon(widget.icon, size: 20),
-                            const SizedBox(width: 8),
+                            Icon(widget.icon, size: 22),
+                            const SizedBox(width: 10),
                           ],
                           Text(
                             widget.label,
                             style: const TextStyle(
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               fontSize: 16,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
                       ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/modern_bottom_nav.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
+import 'package:wenh/widgets/shimmer_loading.dart';
 
 class EnhancedCustomerHomeScreen extends StatefulWidget {
   const EnhancedCustomerHomeScreen({super.key});
@@ -155,7 +156,7 @@ class _EnhancedCustomerHomeScreenState
                             Colors.blue,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: _buildStatCard(
                             'المكتملة',
@@ -168,7 +169,26 @@ class _EnhancedCustomerHomeScreenState
                     ),
                   );
                 }
-                return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: const [
+                      Expanded(
+                        child: ShimmerPlaceholder(
+                          height: 120,
+                          borderRadius: 24,
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: ShimmerPlaceholder(
+                          height: 120,
+                          borderRadius: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
 
@@ -231,7 +251,11 @@ class _EnhancedCustomerHomeScreenState
     return BlocBuilder<RequestCubit, RequestState>(
       builder: (context, state) {
         if (state is RequestLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: 5,
+            itemBuilder: (context, index) => const RequestCardSkeleton(),
+          );
         }
 
         if (state is RequestLoaded) {
@@ -423,11 +447,14 @@ class _EnhancedCustomerHomeScreenState
     IconData icon,
     Color color,
   ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Container(
@@ -496,10 +523,13 @@ class _EnhancedCustomerHomeScreenState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      service['icon'] as IconData,
-                      color: service['color'] as Color,
-                      size: 32,
+                    Hero(
+                      tag: 'service_${service['name']}',
+                      child: Icon(
+                        service['icon'] as IconData,
+                        color: service['color'] as Color,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -523,6 +553,18 @@ class _EnhancedCustomerHomeScreenState
   Widget _buildRecentRequests() {
     return BlocBuilder<RequestCubit, RequestState>(
       builder: (context, state) {
+        if (state is RequestLoading) {
+          return Column(
+            children: List.generate(
+              3,
+              (index) => const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: RequestCardSkeleton(),
+              ),
+            ),
+          );
+        }
+
         if (state is RequestLoaded) {
           final recentRequests = state.requests.take(3).toList();
 
@@ -617,43 +659,105 @@ class _EnhancedCustomerHomeScreenState
         statusIcon = Icons.info;
     }
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
+      ),
       child: InkWell(
         onTap: () {
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('تفاصيل الطلب'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow('النوع:', request.type),
-                  _buildDetailRow('المنطقة:', request.area),
-                  _buildDetailRow('الحالة:', statusText),
-                  if (request.takenBy != null)
-                    _buildDetailRow('العامل:', request.takenBy!),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'الوصف:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(request.description),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('إغلاق'),
+            builder: (context) => Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [AppColors.cardShadowHeavy],
                 ),
-              ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(statusIcon, color: statusColor, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                request.type,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                statusText,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    _buildDetailRow('المنطقة:', request.area),
+                    if (request.takenBy != null)
+                      _buildDetailRow('العامل:', request.takenBy!),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'الوصف:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.background.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        request.description,
+                        style: const TextStyle(height: 1.5),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('إغلاق'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -763,7 +867,10 @@ class _EnhancedCustomerHomeScreenState
                   color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 32),
+                child: Hero(
+                  tag: 'service_$name',
+                  child: Icon(icon, color: color, size: 32),
+                ),
               ),
               const SizedBox(height: 12),
               Padding(

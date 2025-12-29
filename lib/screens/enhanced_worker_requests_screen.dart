@@ -10,6 +10,7 @@ import 'package:wenh/services/filter_service.dart';
 import 'package:wenh/services/location_service.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
+import 'package:wenh/widgets/shimmer_loading.dart';
 
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
@@ -356,7 +357,12 @@ class _EnhancedWorkerRequestsScreenState
                 child: BlocBuilder<RequestCubit, RequestState>(
                   builder: (context, state) {
                     if (state is RequestLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 5,
+                        itemBuilder: (context, index) =>
+                            const RequestCardSkeleton(),
+                      );
                     }
 
                     if (state is RequestLoaded) {
@@ -433,13 +439,26 @@ class _EnhancedWorkerRequestsScreenState
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: requests.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final request = requests[index];
-              return _EnhancedRequestCard(
-                request: request,
-                disabled: disabled,
-                workerName: workerName,
+              return TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 400 + (index * 100)),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 50 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _EnhancedRequestCard(
+                  request: request,
+                  disabled: disabled,
+                  workerName: workerName,
+                ),
               );
             },
           ),
@@ -506,10 +525,8 @@ class _EnhancedRequestCard extends StatelessWidget {
   }
 
   String _calculateDistance(String area) {
-    // Mock distance calculation - in real app, use actual location
     final location = LocationService.getLocationByCity(area);
     if (location != null) {
-      // Assume worker is in Baghdad for demo
       final baghdadLocation = LocationService.getLocationByCity('بغداد');
       if (baghdadLocation != null) {
         final distance = LocationService.calculateDistance(
@@ -529,183 +546,240 @@ class _EnhancedRequestCard extends StatelessWidget {
     final serviceColor = _getServiceColor(request.type);
     final distance = _calculateDistance(request.area);
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: serviceColor.withOpacity(0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [AppColors.softShadow],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: serviceColor.withOpacity(0.12),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: serviceColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    _getServiceIcon(request.type),
-                    color: serviceColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request.type,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            request.area,
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            Icons.straighten,
-                            size: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            distance,
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Description
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'الوصف:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  request.description,
-                  style: TextStyle(color: Colors.grey.shade700),
-                ),
-              ],
-            ),
-          ),
-
-          // Actions
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text('استلام الطلب'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: serviceColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: serviceColor.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    onPressed: disabled
-                        ? null
-                        : () {
-                            context.read<RequestCubit>().takeRequest(
-                              id: request.id,
-                              workerName: workerName,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('تم استلام الطلب بنجاح'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          },
+                    child: Icon(
+                      _getServiceIcon(request.type),
+                      color: serviceColor,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.info_outline),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('تفاصيل الطلب'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          request.type,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
-                            _buildDetailRow('النوع:', request.type),
-                            _buildDetailRow('المنطقة:', request.area),
-                            _buildDetailRow('المسافة:', distance),
-                            _buildDetailRow('الحالة:', request.status),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'الوصف:',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: Colors.grey.shade600,
                             ),
-                            const SizedBox(height: 4),
-                            Text(request.description),
+                            const SizedBox(width: 4),
+                            Text(
+                              request.area,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.straighten,
+                              size: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              distance,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('إغلاق'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+
+            // Description
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'الوصف:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    request.description,
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Actions
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.check_circle, size: 20),
+                      label: const Text('استلام الطلب'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: serviceColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: disabled
+                          ? null
+                          : () {
+                              context.read<RequestCubit>().takeRequest(
+                                id: request.id,
+                                workerName: workerName,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('تم استلام الطلب بنجاح'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    onPressed: () => _showDetailsDialog(context, distance),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDetailsDialog(BuildContext context, String distance) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [AppColors.cardShadowHeavy],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'تفاصيل الطلب',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(height: 32),
+              _buildDetailRow('النوع:', request.type),
+              _buildDetailRow('المنطقة:', request.area),
+              _buildDetailRow('المسافة:', distance),
+              _buildDetailRow('الحالة:', request.status),
+              const SizedBox(height: 16),
+              const Text(
+                'الوصف:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.background.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  request.description,
+                  style: const TextStyle(height: 1.5),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إغلاق'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(value)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );

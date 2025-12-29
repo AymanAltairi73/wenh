@@ -35,7 +35,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final FirestoreService _firestoreService;
-  
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +47,10 @@ class _AppState extends State<App> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ThemeCubit()),
-        BlocProvider(create: (_) => RequestCubit(firestoreService: _firestoreService)..getRequests()),
+        BlocProvider(
+          create: (_) =>
+              RequestCubit(firestoreService: _firestoreService)..getRequests(),
+        ),
         BlocProvider(create: (_) => AuthCubit()),
         BlocProvider(create: (_) => AdminCubit()),
       ],
@@ -57,16 +60,24 @@ class _AppState extends State<App> {
             title: 'وينه',
             debugShowCheckedModeBanner: false,
             theme: themeState.themeData.copyWith(
-              textTheme: GoogleFonts.tajawalTextTheme(themeState.themeData.textTheme),
+              textTheme: GoogleFonts.tajawalTextTheme(
+                themeState.themeData.textTheme,
+              ),
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: ZoomPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                },
+              ),
             ),
-        locale: const Locale('ar'),
-        supportedLocales: const [Locale('ar')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        initialRoute: '/splash',
+            locale: const Locale('ar'),
+            supportedLocales: const [Locale('ar')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            initialRoute: '/splash',
             routes: {
               '/splash': (_) => const SplashScreen(),
               '/onboarding': (_) => const OnboardingScreen(),

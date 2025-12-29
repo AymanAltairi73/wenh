@@ -11,7 +11,7 @@ class ThemeState {
   final bool isDark;
 
   ThemeState({required this.themeData, required this.appTheme})
-      : isDark = appTheme == AppTheme.dark;
+    : isDark = appTheme == AppTheme.dark;
 
   ThemeState copyWith({ThemeData? themeData, AppTheme? appTheme}) {
     return ThemeState(
@@ -23,7 +23,7 @@ class ThemeState {
 
 class ThemeCubit extends Cubit<ThemeState> {
   static const String _themeKey = 'app_theme';
-  
+
   ThemeCubit() : super(_getLightTheme()) {
     _loadTheme();
   }
@@ -49,7 +49,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         useMaterial3: true,
         brightness: Brightness.light,
         scaffoldBackgroundColor: AppColors.background,
-        
+
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
@@ -64,7 +64,7 @@ class ThemeCubit extends Cubit<ThemeState> {
           onSurface: AppColors.textPrimary,
           onBackground: AppColors.textPrimary,
         ),
-        
+
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,
@@ -77,16 +77,16 @@ class ThemeCubit extends Cubit<ThemeState> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        
+
         cardTheme: CardThemeData(
           elevation: 0,
           color: AppColors.surface,
           shadowColor: AppColors.cardShadow,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
           ),
         ),
-        
+
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
@@ -94,53 +94,60 @@ class ThemeCubit extends Cubit<ThemeState> {
             elevation: 4,
             shadowColor: AppColors.primary.withOpacity(0.3),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
             textStyle: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
         ),
-        
+
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: 6,
+          elevation: 8,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
-        
+
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surfaceVariant,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.1)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.divider),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.1)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(color: AppColors.error),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.error, width: 2),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: AppColors.error, width: 1.5),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          hintStyle: const TextStyle(color: AppColors.textSecondary),
-          labelStyle: const TextStyle(color: AppColors.textSecondary),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20,
+          ),
+          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
+          labelStyle: const TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        
+
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.surface,
           selectedItemColor: AppColors.primary,
@@ -149,25 +156,70 @@ class ThemeCubit extends Cubit<ThemeState> {
           elevation: 8,
           selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
         ),
-        
+
         textTheme: const TextTheme(
-          displayLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-          displayMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-          displaySmall: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-          headlineLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-          headlineMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-          headlineSmall: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-          titleLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-          titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
-          titleSmall: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-          bodyLarge: TextStyle(color: AppColors.textPrimary),
-          bodyMedium: TextStyle(color: AppColors.textSecondary),
-          bodySmall: TextStyle(color: AppColors.textSecondary),
-          labelLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-          labelMedium: TextStyle(color: AppColors.textSecondary),
-          labelSmall: TextStyle(color: AppColors.textSecondary),
+          displayLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -1,
+            height: 1.2,
+          ),
+          displayMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+            height: 1.2,
+          ),
+          displaySmall: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+          headlineLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+          headlineMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+          headlineSmall: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+          titleLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+          titleMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          titleSmall: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          bodyLarge: TextStyle(color: AppColors.textPrimary, height: 1.5),
+          bodyMedium: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          bodySmall: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          labelLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+          labelMedium: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+          labelSmall: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        
+
         iconTheme: const IconThemeData(color: AppColors.primary),
         dividerColor: AppColors.divider,
         dividerTheme: const DividerThemeData(
@@ -186,7 +238,7 @@ class ThemeCubit extends Cubit<ThemeState> {
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AppColors.backgroundDark,
-        
+
         colorScheme: ColorScheme.dark(
           primary: AppColors.primaryLight,
           secondary: AppColors.secondaryLight,
@@ -199,7 +251,7 @@ class ThemeCubit extends Cubit<ThemeState> {
           onSurface: AppColors.textPrimaryDark,
           onBackground: AppColors.textPrimaryDark,
         ),
-        
+
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,
@@ -212,16 +264,16 @@ class ThemeCubit extends Cubit<ThemeState> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        
+
         cardTheme: CardThemeData(
           elevation: 0,
           color: AppColors.cardDark,
           shadowColor: AppColors.cardShadowDark,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
           ),
         ),
-        
+
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryLight,
@@ -229,53 +281,72 @@ class ThemeCubit extends Cubit<ThemeState> {
             elevation: 6,
             shadowColor: AppColors.primaryLight.withOpacity(0.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
             textStyle: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
         ),
-        
+
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.primaryLight,
           foregroundColor: Colors.white,
           elevation: 8,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
-        
+
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surfaceVariantDark,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.dividerDark),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: AppColors.dividerDark.withOpacity(0.2),
+            ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.dividerDark),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: AppColors.dividerDark.withOpacity(0.2),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.accentLight, width: 2),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(
+              color: AppColors.accentLight,
+              width: 1.5,
+            ),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(color: AppColors.errorLight),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.errorLight, width: 2),
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(
+              color: AppColors.errorLight,
+              width: 1.5,
+            ),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          hintStyle: const TextStyle(color: AppColors.textTertiaryDark),
-          labelStyle: const TextStyle(color: AppColors.textSecondaryDark),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20,
+          ),
+          hintStyle: TextStyle(
+            color: AppColors.textTertiaryDark.withOpacity(0.5),
+          ),
+          labelStyle: const TextStyle(
+            color: AppColors.textSecondaryDark,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        
+
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.surfaceDark,
           selectedItemColor: AppColors.accentLight,
@@ -284,25 +355,73 @@ class ThemeCubit extends Cubit<ThemeState> {
           elevation: 8,
           selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
         ),
-        
+
         textTheme: const TextTheme(
-          displayLarge: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.bold),
-          displayMedium: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.bold),
-          displaySmall: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.bold),
-          headlineLarge: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.bold),
-          headlineMedium: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.w600),
-          headlineSmall: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.w600),
-          titleLarge: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.w600),
-          titleMedium: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.w500),
-          titleSmall: TextStyle(color: AppColors.textSecondaryDark, fontWeight: FontWeight.w500),
-          bodyLarge: TextStyle(color: AppColors.textPrimaryDark),
-          bodyMedium: TextStyle(color: AppColors.textSecondaryDark),
-          bodySmall: TextStyle(color: AppColors.textTertiaryDark),
-          labelLarge: TextStyle(color: AppColors.textPrimaryDark, fontWeight: FontWeight.w600),
-          labelMedium: TextStyle(color: AppColors.textSecondaryDark),
-          labelSmall: TextStyle(color: AppColors.textTertiaryDark),
+          displayLarge: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -1,
+            height: 1.2,
+          ),
+          displayMedium: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+            height: 1.2,
+          ),
+          displaySmall: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+          headlineLarge: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+          headlineMedium: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w700,
+          ),
+          headlineSmall: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w700,
+          ),
+          titleLarge: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+          titleMedium: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          titleSmall: TextStyle(
+            color: AppColors.textSecondaryDark,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          bodyLarge: TextStyle(color: AppColors.textPrimaryDark, height: 1.5),
+          bodyMedium: TextStyle(
+            color: AppColors.textSecondaryDark,
+            height: 1.5,
+          ),
+          bodySmall: TextStyle(color: AppColors.textTertiaryDark, height: 1.5),
+          labelLarge: TextStyle(
+            color: AppColors.textPrimaryDark,
+            fontWeight: FontWeight.w700,
+          ),
+          labelMedium: TextStyle(
+            color: AppColors.textSecondaryDark,
+            fontWeight: FontWeight.w500,
+          ),
+          labelSmall: TextStyle(
+            color: AppColors.textTertiaryDark,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        
+
         iconTheme: const IconThemeData(color: AppColors.accentLight),
         dividerColor: AppColors.dividerDark,
         dividerTheme: const DividerThemeData(

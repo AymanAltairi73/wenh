@@ -17,8 +17,8 @@ class GlassmorphicCard extends StatelessWidget {
   const GlassmorphicCard({
     super.key,
     required this.child,
-    this.borderRadius = 16,
-    this.blur = 10,
+    this.borderRadius = 24,
+    this.blur = 15,
     this.opacity = 0.1,
     this.padding,
     this.margin,
@@ -30,19 +30,13 @@ class GlassmorphicCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
-          BoxShadow(
-            color: isDark 
-                ? AppColors.cardShadowDark.withOpacity(0.3)
-                : AppColors.cardShadow,
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+          isDark ? AppColors.cardShadowHeavy : AppColors.cardShadowMedium,
         ],
       ),
       child: ClipRRect(
@@ -51,24 +45,28 @@ class GlassmorphicCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
           child: Container(
             decoration: BoxDecoration(
-              gradient: gradient ?? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [
-                        AppColors.glassDark.withOpacity(opacity),
-                        AppColors.glassDark.withOpacity(opacity * 0.5),
-                      ]
-                    : [
-                        AppColors.glassLight.withOpacity(opacity),
-                        AppColors.glassLight.withOpacity(opacity * 0.5),
-                      ],
-              ),
+              gradient:
+                  gradient ??
+                  LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                            AppColors.glassDark.withOpacity(opacity),
+                            AppColors.glassDark.withOpacity(opacity * 0.4),
+                          ]
+                        : [
+                            AppColors.glassLight.withOpacity(opacity),
+                            AppColors.glassLight.withOpacity(opacity * 0.4),
+                          ],
+                  ),
               borderRadius: BorderRadius.circular(borderRadius),
               border: showBorder
                   ? Border.all(
-                      color: AppColors.glassBorder,
-                      width: 1.5,
+                      color: isDark
+                          ? AppColors.glassBorderDark
+                          : AppColors.glassBorderLight,
+                      width: 1.0,
                     )
                   : null,
             ),

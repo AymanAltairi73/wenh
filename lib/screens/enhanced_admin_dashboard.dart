@@ -10,6 +10,7 @@ import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:wenh/widgets/stat_card.dart';
 import 'package:wenh/widgets/request_card.dart';
+import 'package:wenh/widgets/shimmer_loading.dart';
 
 class EnhancedAdminDashboard extends StatefulWidget {
   const EnhancedAdminDashboard({super.key});
@@ -146,8 +147,8 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [AppColors.cardShadowMedium],
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [AppColors.cardShadowHeavy],
             ),
             child: Row(
               children: [
@@ -187,7 +188,10 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -217,6 +221,27 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
     return BlocBuilder<RequestCubit, RequestState>(
       builder: (context, state) {
         int total = 0, newCount = 0, taken = 0;
+
+        if (state is RequestLoading) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: const [
+                Expanded(
+                  child: ShimmerPlaceholder(height: 100, borderRadius: 20),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ShimmerPlaceholder(height: 100, borderRadius: 20),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ShimmerPlaceholder(height: 100, borderRadius: 20),
+                ),
+              ],
+            ),
+          );
+        }
 
         if (state is RequestLoaded) {
           total = state.requests.length;
@@ -305,8 +330,17 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
     return BlocBuilder<RequestCubit, RequestState>(
       builder: (context, state) {
         if (state is RequestLoading) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
+          return SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: RequestCardSkeleton(),
+                ),
+                childCount: 5,
+              ),
+            ),
           );
         }
 
@@ -314,7 +348,9 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
           var requests = state.requests;
 
           if (_selectedFilter != 'all') {
-            requests = requests.where((r) => r.status == _selectedFilter).toList();
+            requests = requests
+                .where((r) => r.status == _selectedFilter)
+                .toList();
           }
 
           if (requests.isEmpty) {
@@ -345,15 +381,25 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
           return SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  return Padding(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return TweenAnimationBuilder<double>(
+                  duration: Duration(milliseconds: 400 + (index * 100)),
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 30 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: RequestCard(request: requests[index]),
-                  );
-                },
-                childCount: requests.length,
-              ),
+                  ),
+                );
+              }, childCount: requests.length),
             ),
           );
         }
