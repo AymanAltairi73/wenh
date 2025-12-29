@@ -7,6 +7,7 @@ import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
 import 'cubits/theme_cubit.dart';
+import 'services/firestore_service.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -33,9 +34,12 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  late final FirestoreService _firestoreService;
+  
   @override
   void initState() {
     super.initState();
+    _firestoreService = FirestoreService();
   }
 
   @override
@@ -43,7 +47,7 @@ class _AppState extends State<App> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ThemeCubit()),
-        BlocProvider(create: (_) => RequestCubit()..getRequests()),
+        BlocProvider(create: (_) => RequestCubit(firestoreService: _firestoreService)..getRequests()),
         BlocProvider(create: (_) => AuthCubit()),
         BlocProvider(create: (_) => AdminCubit()),
       ],

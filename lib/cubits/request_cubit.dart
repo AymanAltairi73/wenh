@@ -1,37 +1,40 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/request_model.dart';
+import '../services/firestore_service.dart';
 import 'request_state.dart';
 
 class RequestCubit extends Cubit<RequestState> {
-  RequestCubit() : super(const RequestInitial());
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreService _firestoreService;
   StreamSubscription? _requestsSubscription;
 
-  void getRequests() {
+  RequestCubit({FirestoreService? firestoreService})
+      : _firestoreService = firestoreService ?? FirestoreService(),
+        super(const RequestInitial());
+
+  void getRequests({String? status, String? area}) {
     emit(const RequestLoading());
     
-    _requestsSubscription?.cancel();
-    _requestsSubscription = _firestore
-        .collection('requests')
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .listen(
-      (snapshot) {
-        final requests = snapshot.docs
-            .map((doc) => RequestModel.fromFirestore(doc))
-            .toList();
-        emit(RequestLoaded(requests));
-      },
-      onError: (error, stackTrace) {
-        debugPrint('[RequestCubit] getRequests error: $error');
-        debugPrint('[RequestCubit] stackTrace: $stackTrace');
-        emit(RequestError('فشل تحميل الطلبات: ${error.toString()}'));
-      },
-    );
+    try {
+      _requestsSubscription?.cancel();
+      _requestsSubscription = _firestoreService
+          .getRequests(status: status, area: area)
+          .listen(
+        (requests) {
+          emit(RequestLoaded(requests));
+        },
+        onError: (error, stackTrace) {
+          debugPrint('[RequestCubit] getRequests error: $error');
+          debugPrint('[RequestCubit] stackTrace: $stackTrace');
+          emit(RequestError(_getErrorMessage(error)));
+        },
+      );
+    } catch (e, stackTrace) {
+      debugPrint('[RequestCubit] getRequests error: $e');
+      debugPrint('[RequestCubit] stackTrace: $stackTrace');
+      emit(RequestError(_getErrorMessage(e)));
+    }
   }
 
   Future<void> addRequest({
@@ -47,11 +50,12 @@ class RequestCubit extends Cubit<RequestState> {
         description: description,
         status: 'new',
       );
-      await _firestore.collection('requests').add(request.toFirestore());
+      
+      await _firestoreService.createRequest(request);
     } catch (e, stackTrace) {
       debugPrint('[RequestCubit] addRequest error: $e');
       debugPrint('[RequestCubit] stackTrace: $stackTrace');
-      emit(RequestError('فشل إضافة الطلب: ${e.toString()}'));
+      emit(RequestError(_getErrorMessage(e)));
     }
   }
 
@@ -60,46 +64,59 @@ class RequestCubit extends Cubit<RequestState> {
     required String workerName,
   }) async {
     try {
-      await _firestore.collection('requests').doc(id).update({
-        'status': 'taken',
-        'takenBy': workerName,
-        'takenAt': FieldValue.serverTimestamp(),
-      });
+      await _firestoreService.takeRequest(id);
     } catch (e, stackTrace) {
       debugPrint('[RequestCubit] takeRequest error: $e');
       debugPrint('[RequestCubit] stackTrace: $stackTrace');
-      emit(RequestError('فشل استلام الطلب: ${e.toString()}'));
+      emit(RequestError(_getErrorMessage(e)));
     }
   }
 
   Future<void> updateStatus({
     required String id,
     required String status,
-    String? takenBy,
+    String? cancelReason,
   }) async {
     try {
-      final updateData = <String, dynamic>{'status': status};
-      if (takenBy != null) {
-        updateData['takenBy'] = takenBy;
-      }
-      if (status == 'completed') {
-        updateData['completedAt'] = FieldValue.serverTimestamp();
-      }
-      await _firestore.collection('requests').doc(id).update(updateData);
+      await _firestoreService.updateRequestStatus(
+        id,
+        status,
+        cancelReason: cancelReason,
+      );
     } catch (e, stackTrace) {
       debugPrint('[RequestCubit] updateStatus error: $e');
       debugPrint('[RequestCubit] stackTrace: $stackTrace');
-      emit(RequestError('فشل تحديث حالة الطلب: ${e.toString()}'));
+      emit(RequestError(_getErrorMessage(e)));
     }
   }
 
   Future<void> deleteRequest(String id) async {
     try {
-      await _firestore.collection('requests').doc(id).delete();
+      await _firestoreService.deleteRequest(id);
     } catch (e, stackTrace) {
       debugPrint('[RequestCubit] deleteRequest error: $e');
       debugPrint('[RequestCubit] stackTrace: $stackTrace');
-      emit(RequestError('فشل حذف الطلب: ${e.toString()}'));
+      emit(RequestError(_getErrorMessage(e)));
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is String) {
+      return error;
+    }
+    
+    final errorString = error.toString().toLowerCase();
+    
+    if (errorString.contains('permission')) {
+      return 'ليس لديك صلاحية للوصول إلى هذه البيانات';
+    } else if (errorString.contains('network')) {
+      return 'تحقق من اتصالك بالإنترنت';
+    } else if (errorString.contains('not found')) {
+      return 'البيانات المطلوبة غير موجودة';
+    } else if (errorString.contains('timeout')) {
+      return 'انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى';
+    } else {
+      return 'حدث خطأ غير متوقع: ${error.toString()}';
     }
   }
 

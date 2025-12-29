@@ -4,15 +4,19 @@ import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
+import 'package:wenh/widgets/modern_bottom_nav.dart';
+import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 
 class EnhancedCustomerHomeScreen extends StatefulWidget {
   const EnhancedCustomerHomeScreen({super.key});
 
   @override
-  State<EnhancedCustomerHomeScreen> createState() => _EnhancedCustomerHomeScreenState();
+  State<EnhancedCustomerHomeScreen> createState() =>
+      _EnhancedCustomerHomeScreenState();
 }
 
-class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen> {
+class _EnhancedCustomerHomeScreenState
+    extends State<EnhancedCustomerHomeScreen> {
   int _currentIndex = 0;
   final TextEditingController _searchController = TextEditingController();
 
@@ -24,7 +28,10 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('وينه'),
         actions: [
@@ -42,15 +49,47 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
           ),
         ],
       ),
-      body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppColors.darkBackgroundGradient
+              : AppColors.backgroundGradient,
+        ),
+        child: _buildBody(),
+      ),
+      bottomNavigationBar: ModernBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home,
+            label: 'الرئيسية',
+          ),
+          BottomNavItem(
+            icon: Icons.list_alt_outlined,
+            activeIcon: Icons.list_alt,
+            label: 'طلباتي',
+          ),
+          BottomNavItem(
+            icon: Icons.grid_view_outlined,
+            activeIcon: Icons.grid_view,
+            label: 'الخدمات',
+          ),
+          BottomNavItem(
+            icon: Icons.menu_outlined,
+            activeIcon: Icons.menu,
+            label: 'المزيد',
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/send'),
         icon: const Icon(Icons.add),
         label: const Text('طلب جديد'),
-        backgroundColor: AppColors.primary,
+        elevation: 8,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -82,28 +121,11 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
             // Search Bar
             Padding(
               padding: const EdgeInsets.all(16),
-              child: TextField(
+              child: GlassmorphicSearchBar(
                 controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'ابحث عن خدمة...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                            });
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                ),
+                hintText: 'ابحث عن خدمة...',
                 onChanged: (value) => setState(() {}),
+                onClear: () => setState(() {}),
               ),
             ),
 
@@ -112,9 +134,15 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
               builder: (context, state) {
                 if (state is RequestLoaded) {
                   final myRequests = state.requests;
-                  final activeRequests = myRequests.where((r) => r.status == 'new' || r.status == 'in_progress').length;
-                  final completedRequests = myRequests.where((r) => r.status == 'completed').length;
-                  
+                  final activeRequests = myRequests
+                      .where(
+                        (r) => r.status == 'new' || r.status == 'in_progress',
+                      )
+                      .length;
+                  final completedRequests = myRequests
+                      .where((r) => r.status == 'completed')
+                      .length;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
@@ -154,10 +182,7 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
                 children: [
                   const Text(
                     'الخدمات الشهيرة',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => setState(() => _currentIndex = 2),
@@ -181,10 +206,7 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
                 children: [
                   const Text(
                     'طلباتي الأخيرة',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => setState(() => _currentIndex = 1),
@@ -238,8 +260,12 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
           }
 
           // Group requests by status
-          final activeRequests = requests.where((r) => r.status == 'new' || r.status == 'in_progress').toList();
-          final completedRequests = requests.where((r) => r.status == 'completed').toList();
+          final activeRequests = requests
+              .where((r) => r.status == 'new' || r.status == 'in_progress')
+              .toList();
+          final completedRequests = requests
+              .where((r) => r.status == 'completed')
+              .toList();
 
           return DefaultTabController(
             length: 2,
@@ -255,7 +281,10 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
                   child: TabBarView(
                     children: [
                       _buildRequestsList(activeRequests, 'لا توجد طلبات نشطة'),
-                      _buildRequestsList(completedRequests, 'لا توجد طلبات مكتملة'),
+                      _buildRequestsList(
+                        completedRequests,
+                        'لا توجد طلبات مكتملة',
+                      ),
                     ],
                   ),
                 ),
@@ -271,14 +300,42 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
 
   Widget _buildServicesTab() {
     final services = [
-      {'name': '🏗 البناء والتشطيبات', 'icon': Icons.construction, 'color': Colors.orange},
-      {'name': '⚡ الكهرباء والطاقة', 'icon': Icons.electrical_services, 'color': Colors.amber},
-      {'name': '🚿 الماء والتبريد', 'icon': Icons.plumbing, 'color': Colors.blue},
-      {'name': '🪚 النجارة والأثاث', 'icon': Icons.carpenter, 'color': Colors.brown},
-      {'name': '🎨 الدهان والديكور', 'icon': Icons.format_paint, 'color': Colors.purple},
+      {
+        'name': '🏗 البناء والتشطيبات',
+        'icon': Icons.construction,
+        'color': Colors.orange,
+      },
+      {
+        'name': '⚡ الكهرباء والطاقة',
+        'icon': Icons.electrical_services,
+        'color': Colors.amber,
+      },
+      {
+        'name': '🚿 الماء والتبريد',
+        'icon': Icons.plumbing,
+        'color': Colors.blue,
+      },
+      {
+        'name': '🪚 النجارة والأثاث',
+        'icon': Icons.carpenter,
+        'color': Colors.brown,
+      },
+      {
+        'name': '🎨 الدهان والديكور',
+        'icon': Icons.format_paint,
+        'color': Colors.purple,
+      },
       {'name': '🔧 الصيانة العامة', 'icon': Icons.build, 'color': Colors.teal},
-      {'name': '🌿 الحدائق والزراعة', 'icon': Icons.grass, 'color': Colors.green},
-      {'name': '🧹 التنظيف', 'icon': Icons.cleaning_services, 'color': Colors.cyan},
+      {
+        'name': '🌿 الحدائق والزراعة',
+        'icon': Icons.grass,
+        'color': Colors.green,
+      },
+      {
+        'name': '🧹 التنظيف',
+        'icon': Icons.cleaning_services,
+        'color': Colors.cyan,
+      },
     ];
 
     return ListView(
@@ -342,35 +399,30 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
           () => Navigator.pushNamed(context, '/admin-login'),
         ),
         const Divider(height: 32),
-        _buildMenuTile(
-          'المساعدة والدعم',
-          Icons.help,
-          () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('قريباً: صفحة المساعدة')),
-            );
-          },
-        ),
-        _buildMenuTile(
-          'عن التطبيق',
-          Icons.info,
-          () {
-            showAboutDialog(
-              context: context,
-              applicationName: 'وينه',
-              applicationVersion: '1.0.0',
-              applicationIcon: const Icon(Icons.handyman, size: 48),
-              children: [
-                const Text('تطبيق وينه لربط العملاء بالعمال المهرة'),
-              ],
-            );
-          },
-        ),
+        _buildMenuTile('المساعدة والدعم', Icons.help, () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('قريباً: صفحة المساعدة')),
+          );
+        }),
+        _buildMenuTile('عن التطبيق', Icons.info, () {
+          showAboutDialog(
+            context: context,
+            applicationName: 'وينه',
+            applicationVersion: '1.0.0',
+            applicationIcon: const Icon(Icons.handyman, size: 48),
+            children: [const Text('تطبيق وينه لربط العملاء بالعمال المهرة')],
+          );
+        }),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -398,10 +450,7 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -412,7 +461,11 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
 
   Widget _buildQuickServices() {
     final quickServices = [
-      {'name': 'كهرباء', 'icon': Icons.electrical_services, 'color': Colors.amber},
+      {
+        'name': 'كهرباء',
+        'icon': Icons.electrical_services,
+        'color': Colors.amber,
+      },
       {'name': 'سباكة', 'icon': Icons.plumbing, 'color': Colors.blue},
       {'name': 'بناء', 'icon': Icons.construction, 'color': Colors.orange},
       {'name': 'نجارة', 'icon': Icons.carpenter, 'color': Colors.brown},
@@ -488,7 +541,10 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
           return Column(
             children: recentRequests.map((request) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
                 child: _buildRequestCard(request),
               );
             }).toList(),
@@ -580,7 +636,10 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
                   if (request.takenBy != null)
                     _buildDetailRow('العامل:', request.takenBy!),
                   const SizedBox(height: 8),
-                  const Text('الوصف:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'الوصف:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 4),
                   Text(request.description),
                 ],
@@ -612,7 +671,10 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -638,7 +700,11 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+                  Icon(
+                    Icons.location_on,
+                    size: 16,
+                    color: Colors.grey.shade600,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     request.area,
@@ -742,34 +808,6 @@ class _EnhancedCustomerHomeScreenState extends State<EnhancedCustomerHomeScreen>
           Expanded(child: Text(value)),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) => setState(() => _currentIndex = index),
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'الرئيسية',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.list_alt),
-          label: 'طلباتي',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.grid_view),
-          label: 'الخدمات',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.menu),
-          label: 'المزيد',
-        ),
-      ],
     );
   }
 }

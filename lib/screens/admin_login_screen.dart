@@ -20,6 +20,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _rememberMe = true;
 
   @override
   void dispose() {
@@ -80,11 +81,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         shape: BoxShape.circle,
         boxShadow: [AppColors.cardShadowHeavy],
       ),
-      child: const Icon(
-        AppIcons.admin,
-        size: 80,
-        color: Colors.white,
-      ),
+      child: const Icon(AppIcons.admin, size: 80, color: Colors.white),
     );
   }
 
@@ -133,7 +130,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Theme.of(context).inputDecorationTheme.fillColor,
@@ -157,7 +157,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               prefixIcon: const Icon(Icons.lock_rounded),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? AppIcons.visibilityOff : AppIcons.visibility,
+                  _obscurePassword
+                      ? AppIcons.visibilityOff
+                      : AppIcons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
@@ -174,7 +176,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
               filled: true,
               fillColor: Theme.of(context).inputDecorationTheme.fillColor,
@@ -188,6 +193,35 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               }
               return null;
             },
+          ),
+          const SizedBox(height: 16),
+          // Remember Me Toggle
+          Row(
+            children: [
+              SizedBox(
+                height: 24,
+                width: 24,
+                child: Checkbox(
+                  value: _rememberMe,
+                  onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  activeColor: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () => setState(() => _rememberMe = !_rememberMe),
+                child: Text(
+                  'تذكرني',
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 32),
           ElevatedButton(
@@ -208,10 +242,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 SizedBox(width: 12),
                 Text(
                   'تسجيل الدخول',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -222,7 +253,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               Expanded(child: Divider(color: Colors.grey.shade300)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('أو', style: TextStyle(color: Colors.grey.shade600)),
+                child: Text(
+                  'أو',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
               ),
               Expanded(child: Divider(color: Colors.grey.shade300)),
             ],
@@ -230,7 +264,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           const SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: _handleGoogleLogin,
-            icon: const Icon(Icons.g_mobiledata, size: 28, color: AppColors.primary),
+            icon: const Icon(
+              Icons.g_mobiledata,
+              size: 28,
+              color: AppColors.primary,
+            ),
             label: const Text(
               'تسجيل الدخول بواسطة Google',
               style: TextStyle(fontSize: 16),
@@ -266,7 +304,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       final password = _passwordController.text;
 
       debugPrint('[AdminLoginScreen] Attempting login for: $email');
-      await context.read<AdminCubit>().login(email, password);
+      await context.read<AdminCubit>().login(
+        email,
+        password,
+        rememberMe: _rememberMe,
+      );
     } catch (e, stackTrace) {
       debugPrint('[AdminLoginScreen] _handleLogin error: $e');
       debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');

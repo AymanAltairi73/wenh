@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:wenh/widgets/custom_button.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:wenh/widgets/animated_role_card.dart';
 import 'package:wenh/widgets/theme_toggle.dart';
+import 'package:wenh/core/theme/app_colors.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('اختيار الدور'),
         actions: const [
           Padding(
@@ -19,128 +26,166 @@ class RoleSelectionScreen extends StatelessWidget {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.teal.shade50, Colors.white],
-          ),
+          gradient: isDark
+              ? AppColors.darkBackgroundGradient
+              : AppColors.backgroundGradient,
         ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                Center(
-                  child: Hero(
-                    tag: 'app_logo',
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      height: 96,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.handyman, size: 64, color: Colors.white),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'مرحباً بك في وينه',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'يرجى اختيار نوع المستخدم للمتابعة',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-            // Customer
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text('زبون', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    const Text('أنشئ طلب خدمة بدون الحاجة إلى حساب.'),
-                    const SizedBox(height: 12),
-                    CustomButton(
-                      label: 'أنا زبون',
-                      icon: Icons.person_outline,
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/customer'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Worker
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text('عامل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    const Text('سجّل دخولك للاطلاع على طلبات الزبائن واستلامها.'),
-                    const SizedBox(height: 12),
-                    CustomButton(
-                      label: 'أنا عامل',
-                      icon: Icons.build,
-                      onPressed: () => Navigator.pushNamed(context, '/login'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-                const SizedBox(height: 16),
-            // Admin
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
+                  
+                  // Logo and Title
+                  Center(
+                    child: Column(
                       children: [
-                        const Text('مدير النظام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'جديد',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple.shade700,
+                        Hero(
+                          tag: 'app_logo',
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.purpleIndigoGradient,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              height: 64,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.handyman,
+                                size: 64,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
+                        )
+                            .animate()
+                            .fadeIn(duration: 600.ms)
+                            .scale(
+                              begin: const Offset(0.8, 0.8),
+                              end: const Offset(1, 1),
+                              duration: 600.ms,
+                              curve: Curves.easeOutBack,
+                            ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'مرحباً بك في وينه',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                foreground: Paint()
+                                  ..shader = AppColors.purpleIndigoGradient.createShader(
+                                    const Rect.fromLTWH(0, 0, 200, 70),
+                                  ),
+                              ),
+                        )
+                            .animate()
+                            .fadeIn(delay: 200.ms, duration: 600.ms)
+                            .slideY(begin: 0.3, end: 0, duration: 600.ms),
+                        const SizedBox(height: 12),
+                        Text(
+                          'يرجى اختيار نوع المستخدم للمتابعة',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondary,
+                              ),
+                        )
+                            .animate()
+                            .fadeIn(delay: 400.ms, duration: 600.ms)
+                            .slideY(begin: 0.3, end: 0, duration: 600.ms),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text('سجّل دخولك لإدارة النظام والطلبات والمستخدمين.'),
-                    const SizedBox(height: 12),
-                    CustomButton(
-                      label: 'تسجيل دخول المدير',
-                      icon: Icons.admin_panel_settings,
-                      onPressed: () => Navigator.pushNamed(context, '/admin-login'),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Customer Card
+                  AnimatedRoleCard(
+                    title: 'زبون',
+                    subtitle: 'أنشئ طلب خدمة بدون الحاجة إلى حساب واحصل على المساعدة من العمال المهرة.',
+                    icon: Icons.person_outline,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primaryLight,
+                      ],
                     ),
-                  ],
-                ),
+                    onTap: () => Navigator.pushReplacementNamed(context, '/customer'),
+                    animationDelay: 600,
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Worker Card
+                  AnimatedRoleCard(
+                    title: 'عامل',
+                    subtitle: 'سجّل دخولك للاطلاع على طلبات الزبائن واستلامها وتقديم خدماتك المهنية.',
+                    icon: Icons.build_circle_outlined,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.secondary,
+                        AppColors.secondaryLight,
+                      ],
+                    ),
+                    onTap: () => Navigator.pushNamed(context, '/login'),
+                    animationDelay: 800,
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Admin Card
+                  AnimatedRoleCard(
+                    title: 'مدير النظام',
+                    subtitle: 'سجّل دخولك لإدارة النظام والطلبات والمستخدمين بصلاحيات كاملة.',
+                    icon: Icons.admin_panel_settings_outlined,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.accent,
+                        AppColors.accentLight,
+                      ],
+                    ),
+                    onTap: () => Navigator.pushNamed(context, '/admin-login'),
+                    showBadge: true,
+                    badgeText: 'جديد',
+                    animationDelay: 1000,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // Footer
+                  Center(
+                    child: Text(
+                      'اختر الدور المناسب لك وابدأ رحلتك معنا',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textSecondary,
+                          ),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(delay: 1200.ms, duration: 600.ms),
+                ],
               ),
-            ),
-                const SizedBox(height: 12),
-              ],
             ),
           ),
         ),

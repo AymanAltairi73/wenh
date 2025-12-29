@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
+/// Deep Purple & Indigo High-Tech Color Palette
 class AppColors {
-  static const Color primary = Color(0xFF6C63FF);
-  static const Color primaryDark = Color(0xFF5A52E0);
-  static const Color primaryLight = Color(0xFF8B85FF);
+  // Primary - Deep Purple
+  static const Color primary = Color(0xFF673AB7);
+  static const Color primaryDark = Color(0xFF5E35B1);
+  static const Color primaryLight = Color(0xFF7E57C2);
+  static const Color primaryLighter = Color(0xFF9575CD);
   
-  static const Color secondary = Color(0xFF00D9C0);
-  static const Color secondaryDark = Color(0xFF00B8A3);
-  static const Color secondaryLight = Color(0xFF33E3CE);
+  // Secondary - Indigo
+  static const Color secondary = Color(0xFF3F51B5);
+  static const Color secondaryDark = Color(0xFF3949AB);
+  static const Color secondaryLight = Color(0xFF5C6BC0);
+  static const Color secondaryLighter = Color(0xFF7986CB);
   
-  static const Color accent = Color(0xFFFF6B9D);
-  static const Color accentDark = Color(0xFFE5527D);
-  static const Color accentLight = Color(0xFFFF8FB3);
+  // Accent - Cyan
+  static const Color accent = Color(0xFF00BCD4);
+  static const Color accentDark = Color(0xFF0097A7);
+  static const Color accentLight = Color(0xFF26C6DA);
   
+  // Status Colors
   static const Color success = Color(0xFF4CAF50);
   static const Color successLight = Color(0xFF81C784);
   static const Color successDark = Color(0xFF388E3C);
@@ -29,24 +36,41 @@ class AppColors {
   static const Color infoLight = Color(0xFF64B5F6);
   static const Color infoDark = Color(0xFF1976D2);
   
-  static const Color background = Color(0xFFF8F9FA);
-  static const Color backgroundDark = Color(0xFF0F1419);
+  // Light Mode Backgrounds
+  static const Color background = Color(0xFFF5F5F7);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF1A1F26);
-  static const Color cardDark = Color(0xFF252D38);
+  static const Color surfaceVariant = Color(0xFFF8F8FA);
   
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
+  // Dark Mode Backgrounds
+  static const Color backgroundDark = Color(0xFF1A0033);
+  static const Color surfaceDark = Color(0xFF2D1B4E);
+  static const Color cardDark = Color(0xFF3D2B5E);
+  static const Color surfaceVariantDark = Color(0xFF4A3570);
+  
+  // Text Colors - Light Mode
+  static const Color textPrimary = Color(0xFF1A1A1A);
+  static const Color textSecondary = Color(0xFF666666);
   static const Color textDisabled = Color(0xFFBDBDBD);
-  static const Color textPrimaryDark = Color(0xFFE1E3E6);
-  static const Color textSecondaryDark = Color(0xFFB0BEC5);
-  static const Color textTertiaryDark = Color(0xFF78909C);
   
+  // Text Colors - Dark Mode
+  static const Color textPrimaryDark = Color(0xFFE8E8E8);
+  static const Color textSecondaryDark = Color(0xFFB8B8B8);
+  static const Color textTertiaryDark = Color(0xFF888888);
+  
+  // Dividers
   static const Color divider = Color(0xFFE0E0E0);
-  static const Color dividerDark = Color(0xFF424242);
+  static const Color dividerDark = Color(0xFF4A3570);
   
+  // Glassmorphism
+  static const Color glassLight = Color(0x40FFFFFF);
+  static const Color glassDark = Color(0x20FFFFFF);
+  static const Color glassBorder = Color(0x30FFFFFF);
+  
+  // Shadows
   static const Color cardShadow = Color(0x1A000000);
+  static const Color cardShadowDark = Color(0x40000000);
   
+  // Gradients
   static LinearGradient primaryGradient = const LinearGradient(
     colors: [primary, primaryLight],
     begin: Alignment.topLeft,
@@ -65,24 +89,53 @@ class AppColors {
     end: Alignment.bottomRight,
   );
   
+  static LinearGradient purpleIndigoGradient = const LinearGradient(
+    colors: [primary, secondary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
   static LinearGradient backgroundGradient = const LinearGradient(
-    colors: [Color(0xFFF8F9FA), Color(0xFFE8EAF6)],
+    colors: [Color(0xFFF5F5F7), Color(0xFFE8E3F3)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
   
   static LinearGradient darkBackgroundGradient = const LinearGradient(
-    colors: [Color(0xFF0F1419), Color(0xFF1A1F26)],
+    colors: [Color(0xFF1A0033), Color(0xFF2D1B4E)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
   
   static LinearGradient darkPrimaryGradient = const LinearGradient(
-    colors: [Color(0xFF26A69A), Color(0xFF4DD0E1)],
+    colors: [primaryLight, accentLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   
+  static LinearGradient shimmerGradient = const LinearGradient(
+    colors: [
+      Color(0xFFE0E0E0),
+      Color(0xFFF5F5F5),
+      Color(0xFFE0E0E0),
+    ],
+    stops: [0.0, 0.5, 1.0],
+    begin: Alignment(-1.0, 0.0),
+    end: Alignment(1.0, 0.0),
+  );
+  
+  static LinearGradient shimmerGradientDark = const LinearGradient(
+    colors: [
+      Color(0xFF2D1B4E),
+      Color(0xFF3D2B5E),
+      Color(0xFF2D1B4E),
+    ],
+    stops: [0.0, 0.5, 1.0],
+    begin: Alignment(-1.0, 0.0),
+    end: Alignment(1.0, 0.0),
+  );
+  
+  // Shadows
   static BoxShadow cardShadowLight = BoxShadow(
     color: cardShadow,
     blurRadius: 12,
@@ -101,6 +154,20 @@ class AppColors {
     color: cardShadow.withOpacity(0.15),
     blurRadius: 30,
     offset: const Offset(0, 12),
+    spreadRadius: 0,
+  );
+  
+  static BoxShadow glowShadow = BoxShadow(
+    color: primary.withOpacity(0.3),
+    blurRadius: 20,
+    offset: const Offset(0, 4),
+    spreadRadius: 0,
+  );
+  
+  static BoxShadow glowShadowDark = BoxShadow(
+    color: primaryLight.withOpacity(0.4),
+    blurRadius: 24,
+    offset: const Offset(0, 6),
     spreadRadius: 0,
   );
 }

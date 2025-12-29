@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wenh/core/theme/app_colors.dart';
+import 'package:wenh/cubits/auth_cubit.dart';
+import 'package:wenh/cubits/auth_state.dart';
+import 'package:wenh/cubits/admin_cubit.dart';
+import 'package:wenh/cubits/admin_state.dart';
+import 'package:wenh/services/auth_storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,7 +15,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -17,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -43,23 +50,56 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _navigateToNext() async {
     try {
-      await Future.delayed(const Duration(seconds: 3));
-      
+      await Future.delayed(const Duration(seconds: 2));
+
       if (!mounted) return;
 
       final prefs = await SharedPreferences.getInstance();
       final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
-      if (!mounted) return;
-
-      if (hasSeenOnboarding) {
-        Navigator.pushReplacementNamed(context, '/role');
-      } else {
+      if (!hasSeenOnboarding) {
         Navigator.pushReplacementNamed(context, '/onboarding');
+        return;
       }
+
+      // Check for auto-login
+      final storageService = AuthStorageService();
+      final shouldAutoLogin = await storageService.shouldAutoLogin();
+
+      if (shouldAutoLogin) {
+        final userType = await storageService.getUserType();
+
+        if (userType == 'worker') {
+          final authCubit = context.read<AuthCubit>();
+          await authCubit.checkAuthState();
+
+          if (!mounted) return;
+
+          if (authCubit.state is Authenticated) {
+            Navigator.pushReplacementNamed(context, '/worker');
+            return;
+          }
+        } else if (userType == 'admin') {
+          final adminCubit = context.read<AdminCubit>();
+          await adminCubit.checkAuthState();
+
+          if (!mounted) return;
+
+          if (adminCubit.state is AdminAuthenticated) {
+            Navigator.pushReplacementNamed(context, '/admin');
+            return;
+          }
+        }
+      }
+
+      // Default fallback to role selection
+      Navigator.pushReplacementNamed(context, '/role');
     } catch (e, stackTrace) {
       debugPrint('[SplashScreen] _navigateToNext error: $e');
       debugPrint('[SplashScreen] stackTrace: $stackTrace');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/role');
+      }
     }
   }
 
@@ -71,18 +111,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
-              AppColors.secondary,
-            ],
-          ),
+          gradient: isDark
+              ? AppColors.darkBackgroundGradient
+              : AppColors.purpleIndigoGradient,
         ),
         child: Center(
           child: Column(

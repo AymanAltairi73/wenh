@@ -5,6 +5,7 @@ import 'package:wenh/cubits/admin_state.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
+import 'package:wenh/models/admin_model.dart';
 import 'package:intl/intl.dart';
 
 class EnhancedAdminProfile extends StatelessWidget {
@@ -14,9 +15,7 @@ class EnhancedAdminProfile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: BlocBuilder<AdminCubit, AdminState>(
             builder: (context, state) {
@@ -66,7 +65,7 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(admin) {
+  Widget _buildProfileHeader(AdminModel admin) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
@@ -85,11 +84,7 @@ class EnhancedAdminProfile extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),
-            child: const Icon(
-              AppIcons.admin,
-              size: 50,
-              color: Colors.white,
-            ),
+            child: const Icon(AppIcons.admin, size: 50, color: Colors.white),
           ),
           const SizedBox(height: 16),
           Text(
@@ -118,11 +113,7 @@ class EnhancedAdminProfile extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _getRoleIcon(admin.role),
-                  color: Colors.white,
-                  size: 20,
-                ),
+                Icon(_getRoleIcon(admin.role), color: Colors.white, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   admin.roleDisplayName,
@@ -140,8 +131,10 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionsCard(admin) {
-    final permissions = admin.permissions.entries.where((e) => e.value).toList();
+  Widget _buildPermissionsCard(AdminModel admin) {
+    final permissions = admin.permissions.entries
+        .where((MapEntry<String, bool> e) => e.value)
+        .toList();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -209,7 +202,7 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountInfo(admin) {
+  Widget _buildAccountInfo(AdminModel admin) {
     final dateFormat = DateFormat('yyyy/MM/dd - HH:mm', 'ar');
 
     return Container(
@@ -273,7 +266,12 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    String label,
+    String value,
+    IconData icon, {
+    Color? valueColor,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 20, color: AppColors.textSecondary),
@@ -351,7 +349,12 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -389,7 +392,7 @@ class EnhancedAdminProfile extends StatelessWidget {
     );
   }
 
-  IconData _getRoleIcon(role) {
+  IconData _getRoleIcon(AdminRole role) {
     switch (role.toString()) {
       case 'AdminRole.superAdmin':
         return AppIcons.superAdmin;

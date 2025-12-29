@@ -8,15 +8,19 @@ import 'package:wenh/models/request_model.dart';
 import 'package:wenh/models/request_filter_model.dart';
 import 'package:wenh/services/filter_service.dart';
 import 'package:wenh/services/location_service.dart';
+import 'package:wenh/core/theme/app_colors.dart';
+import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
 
   @override
-  State<EnhancedWorkerRequestsScreen> createState() => _EnhancedWorkerRequestsScreenState();
+  State<EnhancedWorkerRequestsScreen> createState() =>
+      _EnhancedWorkerRequestsScreenState();
 }
 
-class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScreen> {
+class _EnhancedWorkerRequestsScreenState
+    extends State<EnhancedWorkerRequestsScreen> {
   final FilterService _filterService = FilterService();
   final TextEditingController _searchController = TextEditingController();
   RequestFilterModel _currentFilter = const RequestFilterModel();
@@ -59,14 +63,16 @@ class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScr
       // Search query filter
       if (_currentFilter.searchQuery.isNotEmpty) {
         final query = _currentFilter.searchQuery.toLowerCase();
-        final matchesSearch = request.type.toLowerCase().contains(query) ||
+        final matchesSearch =
+            request.type.toLowerCase().contains(query) ||
             request.area.toLowerCase().contains(query) ||
             request.description.toLowerCase().contains(query);
         if (!matchesSearch) return false;
       }
 
       // Category filter
-      if (_currentFilter.category != null && request.type != _currentFilter.category) {
+      if (_currentFilter.category != null &&
+          request.type != _currentFilter.category) {
         return false;
       }
 
@@ -123,7 +129,9 @@ class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScr
                     final entry = savedFilters.entries.elementAt(index);
                     return ListTile(
                       title: Text(entry.key),
-                      subtitle: Text('${entry.value.activeFiltersCount} فلتر نشط'),
+                      subtitle: Text(
+                        '${entry.value.activeFiltersCount} فلتر نشط',
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -161,14 +169,16 @@ class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScr
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('طلبات العامل'),
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: Icon(_showMap ? Icons.list : Icons.map),
@@ -188,200 +198,219 @@ class _EnhancedWorkerRequestsScreenState extends State<EnhancedWorkerRequestsScr
         ],
       ),
       body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Column(
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppColors.darkBackgroundGradient
+              : AppColors.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: GlassmorphicSearchBar(
+                  controller: _searchController,
                   hintText: 'ابحث عن طلب...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
+                  onChanged: (value) {
+                    _updateFilter(_currentFilter.copyWith(searchQuery: value));
+                  },
+                  onClear: () {
+                    _updateFilter(_currentFilter.copyWith(searchQuery: ''));
+                  },
+                ),
+              ),
+
+              // Filter Chips
+              if (_currentFilter.activeFiltersCount > 0)
+                Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      if (_currentFilter.category != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(
+                            label: Text(_currentFilter.category!),
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                            onDeleted: () =>
+                                _updateFilter(_currentFilter.clearCategory()),
+                          ),
+                        ),
+                      if (_currentFilter.area != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(
+                            label: Text(_currentFilter.area!),
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                            onDeleted: () =>
+                                _updateFilter(_currentFilter.clearArea()),
+                          ),
+                        ),
+                      if (_currentFilter.minBudget != null ||
+                          _currentFilter.maxBudget != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(
+                            label: Text(
+                              '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
+                            ),
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                            onDeleted: () =>
+                                _updateFilter(_currentFilter.clearBudget()),
+                          ),
+                        ),
+                      if (_currentFilter.maxDistance != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Chip(
+                            label: Text('حتى ${_currentFilter.maxDistance} كم'),
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                            onDeleted: () =>
+                                _updateFilter(_currentFilter.clearDistance()),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          label: const Text('مسح الكل'),
                           onPressed: () {
                             _searchController.clear();
-                            _updateFilter(_currentFilter.copyWith(searchQuery: ''));
+                            _updateFilter(_currentFilter.clearAll());
                           },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                onChanged: (value) {
-                  _updateFilter(_currentFilter.copyWith(searchQuery: value));
-                },
-              ),
-            ),
 
-            // Filter Chips
-            if (_currentFilter.activeFiltersCount > 0)
-              Container(
-                height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+              // Filter Button
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
                   children: [
-                    if (_currentFilter.category != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Chip(
-                          label: Text(_currentFilter.category!),
-                          deleteIcon: const Icon(Icons.close, size: 18),
-                          onDeleted: () => _updateFilter(_currentFilter.clearCategory()),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.filter_list),
+                        label: Text(
+                          _currentFilter.activeFiltersCount > 0
+                              ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
+                              : 'الفلاتر',
                         ),
-                      ),
-                    if (_currentFilter.area != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Chip(
-                          label: Text(_currentFilter.area!),
-                          deleteIcon: const Icon(Icons.close, size: 18),
-                          onDeleted: () => _updateFilter(_currentFilter.clearArea()),
-                        ),
-                      ),
-                    if (_currentFilter.minBudget != null || _currentFilter.maxBudget != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Chip(
-                          label: Text(
-                            '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
-                          ),
-                          deleteIcon: const Icon(Icons.close, size: 18),
-                          onDeleted: () => _updateFilter(_currentFilter.clearBudget()),
-                        ),
-                      ),
-                    if (_currentFilter.maxDistance != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Chip(
-                          label: Text('حتى ${_currentFilter.maxDistance} كم'),
-                          deleteIcon: const Icon(Icons.close, size: 18),
-                          onDeleted: () => _updateFilter(_currentFilter.clearDistance()),
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ActionChip(
-                        label: const Text('مسح الكل'),
-                        onPressed: () {
-                          _searchController.clear();
-                          _updateFilter(_currentFilter.clearAll());
-                        },
+                        onPressed: _showFilterDialog,
                       ),
                     ),
                   ],
                 ),
               ),
 
-            // Filter Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.filter_list),
-                      label: Text(
-                        _currentFilter.activeFiltersCount > 0
-                            ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
-                            : 'الفلاتر',
-                      ),
-                      onPressed: _showFilterDialog,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Subscription Warning
-            BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, state) {
-                if (state is Authenticated && !state.worker.isSubscriptionActive) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Card(
-                      color: Colors.orange.shade50,
-                      child: const ListTile(
-                        leading: Icon(Icons.info, color: Colors.orange),
-                        title: Text('انتهى الاشتراك'),
-                        subtitle: Text('يرجى التجديد لعرض الطلبات واستلامها.'),
-                      ),
-                    ),
-                  );
-                }
-                if (state is! Authenticated) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Card(
-                      color: Colors.red.shade50,
-                      child: const ListTile(
-                        leading: Icon(Icons.lock, color: Colors.red),
-                        title: Text('غير مسجل الدخول'),
-                        subtitle: Text('يرجى تسجيل الدخول لاستلام الطلبات.'),
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-
-            // Requests List
-            Expanded(
-              child: BlocBuilder<RequestCubit, RequestState>(
+              // Subscription Warning
+              BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
-                  if (state is RequestLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (state is RequestLoaded) {
-                    final newRequests = state.requests.where((r) => r.status == 'new').toList();
-                    final filteredRequests = _applyFilters(newRequests);
-
-                    if (filteredRequests.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inbox, size: 64, color: Colors.grey.shade400),
-                            const SizedBox(height: 16),
-                            Text(
-                              'لا توجد طلبات متاحة',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            if (_currentFilter.activeFiltersCount > 0) ...[
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _updateFilter(_currentFilter.clearAll());
-                                },
-                                child: const Text('مسح الفلاتر'),
-                              ),
-                            ],
-                          ],
+                  if (state is Authenticated &&
+                      !state.worker.isSubscriptionActive) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Card(
+                        color: Colors.orange.shade50,
+                        child: const ListTile(
+                          leading: Icon(Icons.info, color: Colors.orange),
+                          title: Text('انتهى الاشتراك'),
+                          subtitle: Text(
+                            'يرجى التجديد لعرض الطلبات واستلامها.',
+                          ),
                         ),
-                      );
-                    }
-
-                    return _showMap
-                        ? _buildMapView(filteredRequests)
-                        : _buildListView(filteredRequests);
+                      ),
+                    );
                   }
-
-                  return const Center(child: Text('حدث خطأ في تحميل الطلبات'));
+                  if (state is! Authenticated) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Card(
+                        color: Colors.red.shade50,
+                        child: const ListTile(
+                          leading: Icon(Icons.lock, color: Colors.red),
+                          title: Text('غير مسجل الدخول'),
+                          subtitle: Text('يرجى تسجيل الدخول لاستلام الطلبات.'),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
                 },
               ),
-            ),
-          ],
+
+              // Requests List
+              Expanded(
+                child: BlocBuilder<RequestCubit, RequestState>(
+                  builder: (context, state) {
+                    if (state is RequestLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state is RequestLoaded) {
+                      final newRequests = state.requests
+                          .where((r) => r.status == 'new')
+                          .toList();
+                      final filteredRequests = _applyFilters(newRequests);
+
+                      if (filteredRequests.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inbox,
+                                size: 64,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'لا توجد طلبات متاحة',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              if (_currentFilter.activeFiltersCount > 0) ...[
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _updateFilter(_currentFilter.clearAll());
+                                  },
+                                  child: const Text('مسح الفلاتر'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }
+
+                      return _showMap
+                          ? _buildMapView(filteredRequests)
+                          : _buildListView(filteredRequests);
+                    }
+
+                    return const Center(
+                      child: Text('حدث خطأ في تحميل الطلبات'),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -460,7 +489,8 @@ class _EnhancedRequestCard extends StatelessWidget {
   IconData _getServiceIcon(String type) {
     if (type.contains('كهرباء')) return Icons.electrical_services;
     if (type.contains('سباكة') || type.contains('ماء')) return Icons.plumbing;
-    if (type.contains('بناء') || type.contains('دهان')) return Icons.construction;
+    if (type.contains('بناء') || type.contains('دهان'))
+      return Icons.construction;
     if (type.contains('نجارة')) return Icons.carpenter;
     if (type.contains('تكييف')) return Icons.ac_unit;
     return Icons.home_repair_service;
@@ -523,7 +553,10 @@ class _EnhancedRequestCard extends StatelessWidget {
                     color: serviceColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(_getServiceIcon(request.type), color: serviceColor),
+                  child: Icon(
+                    _getServiceIcon(request.type),
+                    color: serviceColor,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -540,14 +573,22 @@ class _EnhancedRequestCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 16, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             request.area,
                             style: TextStyle(color: Colors.grey.shade600),
                           ),
                           const SizedBox(width: 12),
-                          Icon(Icons.straighten, size: 16, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.straighten,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             distance,
@@ -570,10 +611,7 @@ class _EnhancedRequestCard extends StatelessWidget {
               children: [
                 const Text(
                   'الوصف:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -605,9 +643,9 @@ class _EnhancedRequestCard extends StatelessWidget {
                         ? null
                         : () {
                             context.read<RequestCubit>().takeRequest(
-                                  id: request.id,
-                                  workerName: workerName,
-                                );
+                              id: request.id,
+                              workerName: workerName,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('تم استلام الطلب بنجاح'),
@@ -634,7 +672,10 @@ class _EnhancedRequestCard extends StatelessWidget {
                             _buildDetailRow('المسافة:', distance),
                             _buildDetailRow('الحالة:', request.status),
                             const SizedBox(height: 8),
-                            const Text('الوصف:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              'الوصف:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             const SizedBox(height: 4),
                             Text(request.description),
                           ],
@@ -744,9 +785,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     if (result == true && nameController.text.isNotEmpty) {
       await widget.filterService.saveFilter(nameController.text, _filter);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ الفلتر بنجاح')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم حفظ الفلتر بنجاح')));
       }
     }
   }
@@ -784,7 +825,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   children: [
                     const Text(
                       'الفلاتر',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     TextButton.icon(
                       icon: const Icon(Icons.save),
@@ -804,7 +848,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     // Budget Range
-                    const Text('نطاق الميزانية (د.ع)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'نطاق الميزانية (د.ع)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -849,7 +896,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     const SizedBox(height: 24),
 
                     // Max Distance
-                    const Text('المسافة القصوى (كم)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'المسافة القصوى (كم)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _maxDistanceController,

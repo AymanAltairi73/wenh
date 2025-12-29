@@ -218,7 +218,6 @@ class RequestCard extends StatelessWidget {
       await context.read<RequestCubit>().updateStatus(
             id: request.id,
             status: newStatus,
-            takenBy: newStatus == 'taken' ? 'المشرف' : null,
           );
     }
   }
