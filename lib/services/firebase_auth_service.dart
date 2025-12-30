@@ -19,7 +19,7 @@ class FirebaseAuthService {
       );
 
       final userDoc = await _firestore
-          .collection('users')
+          .collection('workers')
           .doc(credential.user!.uid)
           .get();
 
@@ -35,7 +35,7 @@ class FirebaseAuthService {
         throw Exception('هذا الحساب ليس حساب عامل');
       }
 
-      await _firestore.collection('users').doc(credential.user!.uid).update({
+      await _firestore.collection('workers').doc(credential.user!.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
@@ -44,7 +44,13 @@ class FirebaseAuthService {
         name: data['name'],
         email: data['email'],
         subscription: data['subscription'] ?? false,
-        subscriptionEnd: (data['subscriptionEnd'] as Timestamp).toDate(),
+        subscriptionActive: data['subscriptionActive'] ?? false,
+        subscriptionPlan: data['subscriptionPlan'] ?? 'none',
+        subscriptionStart:
+            (data['subscriptionStart'] as Timestamp?)?.toDate() ??
+            DateTime.now(),
+        subscriptionEnd:
+            (data['subscriptionEnd'] as Timestamp?)?.toDate() ?? DateTime.now(),
       );
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -59,7 +65,7 @@ class FirebaseAuthService {
       );
 
       final userDoc = await _firestore
-          .collection('users')
+          .collection('admins')
           .doc(credential.user!.uid)
           .get();
 
@@ -75,7 +81,7 @@ class FirebaseAuthService {
         throw Exception('هذا الحساب ليس حساب مدير');
       }
 
-      await _firestore.collection('users').doc(credential.user!.uid).update({
+      await _firestore.collection('admins').doc(credential.user!.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
@@ -85,7 +91,9 @@ class FirebaseAuthService {
         'email': data['email'],
         'role': data['adminRole'] ?? 'AdminRole.admin',
         'isActive': data['isActive'] ?? true,
-        'createdAt': (data['createdAt'] as Timestamp).toDate().toIso8601String(),
+        'createdAt': (data['createdAt'] as Timestamp)
+            .toDate()
+            .toIso8601String(),
         'lastLogin': DateTime.now().toIso8601String(),
         'permissions': data['permissions'] ?? {},
       });
@@ -105,12 +113,15 @@ class FirebaseAuthService {
         password: password,
       );
 
-      await _firestore.collection('users').doc(credential.user!.uid).set({
+      await _firestore.collection('workers').doc(credential.user!.uid).set({
         'uid': credential.user!.uid,
         'email': email,
         'name': name,
         'role': 'worker',
         'subscription': false,
+        'subscriptionActive': false,
+        'subscriptionPlan': 'none',
+        'subscriptionStart': Timestamp.fromDate(DateTime.now()),
         'subscriptionEnd': Timestamp.fromDate(DateTime.now()),
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -122,12 +133,13 @@ class FirebaseAuthService {
   Future<WorkerModel?> loginWorkerWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         throw Exception('تم إلغاء تسجيل الدخول');
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -137,15 +149,21 @@ class FirebaseAuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final userDoc = await _firestore
+          .collection('workers')
+          .doc(user.uid)
+          .get();
 
       if (!userDoc.exists) {
-        await _firestore.collection('users').doc(user.uid).set({
+        await _firestore.collection('workers').doc(user.uid).set({
           'uid': user.uid,
           'email': user.email,
           'name': user.displayName ?? 'مستخدم',
           'role': 'worker',
           'subscription': false,
+          'subscriptionActive': false,
+          'subscriptionPlan': 'none',
+          'subscriptionStart': Timestamp.fromDate(DateTime.now()),
           'subscriptionEnd': Timestamp.fromDate(DateTime.now()),
           'createdAt': FieldValue.serverTimestamp(),
           'lastLogin': FieldValue.serverTimestamp(),
@@ -156,6 +174,9 @@ class FirebaseAuthService {
           name: user.displayName ?? 'مستخدم',
           email: user.email!,
           subscription: false,
+          subscriptionActive: false,
+          subscriptionPlan: 'none',
+          subscriptionStart: DateTime.now(),
           subscriptionEnd: DateTime.now(),
         );
       }
@@ -168,7 +189,7 @@ class FirebaseAuthService {
         throw Exception('هذا الحساب ليس حساب عامل');
       }
 
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('workers').doc(user.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
@@ -177,7 +198,13 @@ class FirebaseAuthService {
         name: data['name'],
         email: data['email'],
         subscription: data['subscription'] ?? false,
-        subscriptionEnd: (data['subscriptionEnd'] as Timestamp).toDate(),
+        subscriptionActive: data['subscriptionActive'] ?? false,
+        subscriptionPlan: data['subscriptionPlan'] ?? 'none',
+        subscriptionStart:
+            (data['subscriptionStart'] as Timestamp?)?.toDate() ??
+            DateTime.now(),
+        subscriptionEnd:
+            (data['subscriptionEnd'] as Timestamp?)?.toDate() ?? DateTime.now(),
       );
     } catch (e) {
       if (e is FirebaseAuthException) {
@@ -190,12 +217,13 @@ class FirebaseAuthService {
   Future<AdminModel?> loginAdminWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         throw Exception('تم إلغاء تسجيل الدخول');
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -205,7 +233,7 @@ class FirebaseAuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final userDoc = await _firestore.collection('admins').doc(user.uid).get();
 
       if (!userDoc.exists) {
         await _auth.signOut();
@@ -221,7 +249,7 @@ class FirebaseAuthService {
         throw Exception('هذا الحساب ليس حساب مدير');
       }
 
-      await _firestore.collection('users').doc(user.uid).update({
+      await _firestore.collection('admins').doc(user.uid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
@@ -231,7 +259,9 @@ class FirebaseAuthService {
         'email': data['email'],
         'role': data['adminRole'] ?? 'AdminRole.admin',
         'isActive': data['isActive'] ?? true,
-        'createdAt': (data['createdAt'] as Timestamp).toDate().toIso8601String(),
+        'createdAt': (data['createdAt'] as Timestamp)
+            .toDate()
+            .toIso8601String(),
         'lastLogin': DateTime.now().toIso8601String(),
         'permissions': data['permissions'] ?? {},
       });

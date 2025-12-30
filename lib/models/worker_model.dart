@@ -1,10 +1,14 @@
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WorkerModel extends Equatable {
   final String uid;
   final String name;
   final String email;
-  final bool subscription; // active or not
+  final bool subscription; // legacy: maybe keep for compatibility or replace
+  final bool subscriptionActive;
+  final String subscriptionPlan; // 'weekly' | 'monthly' | 'none'
+  final DateTime subscriptionStart;
   final DateTime subscriptionEnd;
 
   const WorkerModel({
@@ -12,6 +16,9 @@ class WorkerModel extends Equatable {
     required this.name,
     required this.email,
     required this.subscription,
+    required this.subscriptionActive,
+    required this.subscriptionPlan,
+    required this.subscriptionStart,
     required this.subscriptionEnd,
   });
 
@@ -21,6 +28,10 @@ class WorkerModel extends Equatable {
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       subscription: map['subscription'] ?? false,
+      subscriptionActive: map['subscriptionActive'] ?? false,
+      subscriptionPlan: map['subscriptionPlan'] ?? 'none',
+      subscriptionStart:
+          (map['subscriptionStart'] as dynamic)?.toDate() ?? DateTime.now(),
       subscriptionEnd:
           (map['subscriptionEnd'] as dynamic)?.toDate() ?? DateTime.now(),
     );
@@ -32,13 +43,25 @@ class WorkerModel extends Equatable {
       'name': name,
       'email': email,
       'subscription': subscription,
-      'subscriptionEnd': subscriptionEnd,
+      'subscriptionActive': subscriptionActive,
+      'subscriptionPlan': subscriptionPlan,
+      'subscriptionStart': Timestamp.fromDate(subscriptionStart),
+      'subscriptionEnd': Timestamp.fromDate(subscriptionEnd),
     };
   }
 
   bool get isSubscriptionActive =>
-      subscription && subscriptionEnd.isAfter(DateTime.now());
+      subscriptionActive && subscriptionEnd.isAfter(DateTime.now());
 
   @override
-  List<Object?> get props => [uid, name, email, subscription, subscriptionEnd];
+  List<Object?> get props => [
+    uid,
+    name,
+    email,
+    subscription,
+    subscriptionActive,
+    subscriptionPlan,
+    subscriptionStart,
+    subscriptionEnd,
+  ];
 }

@@ -25,6 +25,7 @@ import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/customer_profile_screen.dart';
 import 'screens/worker_profile_screen.dart';
+import 'screens/subscription_selection_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -95,6 +96,7 @@ class _AppState extends State<App> {
               '/settings': (_) => const SettingsScreen(),
               '/customer-profile': (_) => const CustomerProfileScreen(),
               '/worker-profile': (_) => const WorkerProfileScreen(),
+              '/subscription': (_) => const SubscriptionSelectionScreen(),
             },
           );
         },

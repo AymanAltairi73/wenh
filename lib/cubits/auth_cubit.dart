@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/worker_model.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/auth_storage_service.dart';
+import '../services/firestore_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -42,14 +43,30 @@ class AuthCubit extends Cubit<AuthState> {
             debugPrint('[AuthCubit] Error fetching worker data: $e');
           }
         }
-        // Add other user types (admin, customer) here if needed
       }
 
-      // Not authenticated or Remember Me disabled
       emit(const AuthInitial());
     } catch (e) {
       debugPrint('[AuthCubit] checkAuthState error: $e');
       emit(const AuthInitial());
+    }
+  }
+
+  /// Update worker subscription
+  Future<void> updateSubscription(String planType) async {
+    if (current == null) return;
+
+    emit(const AuthLoading());
+    try {
+      final service = FirestoreService();
+      await service.updateWorkerSubscription(current!.uid, planType);
+
+      // Refresh user data
+      await checkAuthState();
+    } catch (e) {
+      debugPrint('[AuthCubit] updateSubscription error: $e');
+      emit(AuthError(e.toString()));
+      if (current != null) emit(Authenticated(current!));
     }
   }
 

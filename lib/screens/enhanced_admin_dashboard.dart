@@ -11,6 +11,8 @@ import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:wenh/widgets/stat_card.dart';
 import 'package:wenh/widgets/request_card.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
+import 'package:wenh/models/worker_model.dart';
+import 'package:wenh/services/firestore_service.dart';
 
 class EnhancedAdminDashboard extends StatefulWidget {
   const EnhancedAdminDashboard({super.key});
@@ -19,12 +21,15 @@ class EnhancedAdminDashboard extends StatefulWidget {
   State<EnhancedAdminDashboard> createState() => _EnhancedAdminDashboardState();
 }
 
-class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
+class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
+    with SingleTickerProviderStateMixin {
   String _selectedFilter = 'all';
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     try {
       debugPrint('[EnhancedAdminDashboard] Initializing and fetching requests');
       context.read<RequestCubit>().getRequests();
@@ -32,6 +37,12 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
       debugPrint('[EnhancedAdminDashboard] initState error: $e');
       debugPrint('[EnhancedAdminDashboard] stackTrace: $stackTrace');
     }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,19 +54,15 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
           child: Column(
             children: [
               _buildAppBar(context),
+              _buildTabBar(),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<RequestCubit>().getRequests();
-                  },
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(child: _buildAdminInfo()),
-                      SliverToBoxAdapter(child: _buildStatistics()),
-                      SliverToBoxAdapter(child: _buildFilterChips()),
-                      _buildRequestsList(),
-                    ],
-                  ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRequestsTab(),
+                    _buildWorkersTab(),
+                    _buildRevenueTab(),
+                  ],
                 ),
               ),
             ],
@@ -67,6 +74,216 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard> {
         icon: const Icon(AppIcons.admin),
         label: const Text('إدارة المديرين'),
         backgroundColor: AppColors.primary,
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppColors.softShadow],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        tabs: const [
+          Tab(text: 'الطلبات', icon: Icon(AppIcons.requests, size: 20)),
+          Tab(text: 'العمال', icon: Icon(AppIcons.workers, size: 20)),
+          Tab(text: 'الأرباح', icon: Icon(Icons.payments, size: 20)),
+        ],
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorSize: TabBarIndicatorSize.label,
+        indicatorColor: AppColors.primary,
+        dividerColor: Colors.transparent,
+      ),
+    );
+  }
+
+  Widget _buildRequestsTab() {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<RequestCubit>().getRequests();
+      },
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildAdminInfo()),
+          SliverToBoxAdapter(child: _buildStatistics()),
+          SliverToBoxAdapter(child: _buildFilterChips()),
+          _buildRequestsList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorkersTab() {
+    final service = FirestoreService();
+    return StreamBuilder<List<WorkerModel>>(
+      stream: service.getAllWorkers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('لا يوجد عمال مسجلين'));
+        }
+
+        final workers = snapshot.data!;
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: workers.length,
+          itemBuilder: (context, index) {
+            final worker = workers[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: worker.isSubscriptionActive
+                      ? Colors.green.shade100
+                      : Colors.red.shade100,
+                  child: Icon(
+                    AppIcons.workers,
+                    color: worker.isSubscriptionActive
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                ),
+                title: Text(
+                  worker.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'الخطة: ${worker.subscriptionPlan == 'weekly'
+                      ? 'أسبوعي'
+                      : worker.subscriptionPlan == 'monthly'
+                      ? 'شهري'
+                      : 'لا يوجد'}',
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      worker.isSubscriptionActive ? 'نشط' : 'منتهي',
+                      style: TextStyle(
+                        color: worker.isSubscriptionActive
+                            ? Colors.green
+                            : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'ينتهي: ${worker.subscriptionEnd.day}/${worker.subscriptionEnd.month}',
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRevenueTab() {
+    final service = FirestoreService();
+    return FutureBuilder<Map<String, dynamic>>(
+      future: service.fetchRevenueStats(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData)
+          return const Center(child: Text('خطأ في تحميل الإحصائيات'));
+
+        final stats = snapshot.data!;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              StatCard(
+                title: 'إجمالي الأرباح',
+                value: '${stats['totalRevenue']} د.ع',
+                icon: Icons.monetization_on,
+                color: Colors.green,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      title: 'أرباح أسبوعية',
+                      value: '${stats['weeklyRevenue']} د.ع',
+                      icon: Icons.calendar_view_week,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: StatCard(
+                      title: 'أرباح شهرية',
+                      value: '${stats['monthlyRevenue']} د.ع',
+                      icon: Icons.calendar_month,
+                      color: Colors.purple,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'عدد المشتركين الفعليين',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRevenueRow(
+                        'خطط أسبوعية',
+                        '${stats['weeklyCount']} عمال',
+                      ),
+                      const Divider(),
+                      _buildRevenueRow(
+                        'خطط شهرية',
+                        '${stats['monthlyCount']} عمال',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRevenueRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

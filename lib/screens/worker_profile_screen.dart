@@ -24,9 +24,7 @@ class WorkerProfileScreen extends StatelessWidget {
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
           if (authState is! Authenticated) {
-            return const Center(
-              child: Text('يرجى تسجيل الدخول أولاً'),
-            );
+            return const Center(child: Text('يرجى تسجيل الدخول أولاً'));
           }
 
           final worker = authState.worker;
@@ -43,17 +41,27 @@ class WorkerProfileScreen extends StatelessWidget {
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.teal.shade100,
-                        child: const Icon(Icons.engineering, size: 50, color: Colors.teal),
+                        child: const Icon(
+                          Icons.engineering,
+                          size: 50,
+                          color: Colors.teal,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         worker.name,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         worker.email,
-                        style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -64,10 +72,16 @@ class WorkerProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.card_membership, color: Colors.teal),
+                      leading: const Icon(
+                        Icons.card_membership,
+                        color: Colors.teal,
+                      ),
                       title: const Text(
                         'معلومات الاشتراك',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                     const Divider(height: 1),
@@ -75,19 +89,23 @@ class WorkerProfileScreen extends StatelessWidget {
                       title: const Text('حالة الاشتراك'),
                       trailing: Chip(
                         label: Text(isActive ? 'نشط' : 'منتهي'),
-                        backgroundColor: isActive ? Colors.green.shade100 : Colors.red.shade100,
+                        backgroundColor: isActive
+                            ? Colors.green.shade100
+                            : Colors.red.shade100,
                         labelStyle: TextStyle(
-                          color: isActive ? Colors.green.shade900 : Colors.red.shade900,
+                          color: isActive
+                              ? Colors.green.shade900
+                              : Colors.red.shade900,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     ListTile(
-                      title: const Text('تاريخ انتهاء الاشتراك'),
-                      trailing: Text(
-                        '${worker.subscriptionEnd.year}-${worker.subscriptionEnd.month.toString().padLeft(2, '0')}-${worker.subscriptionEnd.day.toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      leading: const Icon(Icons.upgrade, color: Colors.orange),
+                      title: const Text('تجديد / ترقية الاشتراك'),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/subscription'),
                     ),
                   ],
                 ),
@@ -100,7 +118,10 @@ class WorkerProfileScreen extends StatelessWidget {
                       leading: const Icon(Icons.analytics, color: Colors.teal),
                       title: const Text(
                         'إحصائيات العمل',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                     const Divider(height: 1),
@@ -157,7 +178,10 @@ class WorkerProfileScreen extends StatelessWidget {
                       leading: const Icon(Icons.menu_book, color: Colors.teal),
                       title: const Text(
                         'الإجراءات السريعة',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                     const Divider(height: 1),
@@ -179,7 +203,11 @@ class WorkerProfileScreen extends StatelessWidget {
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         context.read<AuthCubit>().logout();
-                        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/',
+                          (_) => false,
+                        );
                       },
                     ),
                   ],

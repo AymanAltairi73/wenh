@@ -677,6 +677,7 @@ class _EnhancedRequestCard extends StatelessWidget {
                               context.read<RequestCubit>().takeRequest(
                                 id: request.id,
                                 workerName: workerName,
+                                isSubscribed: !disabled,
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
