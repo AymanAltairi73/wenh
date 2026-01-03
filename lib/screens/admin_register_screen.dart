@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
+import 'package:wenh/services/firebase_auth_service.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -309,7 +310,12 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         password: _passwordController.text,
       );
 
-      await firestore.collection('users').doc(credential.user!.uid).set({
+      // Create base user document using the auto-creation function
+      final authService = FirebaseAuthService();
+      await authService.createUserDocumentIfNotExists(credential.user!);
+
+      // Create admin-specific document
+      await firestore.collection('admins').doc(credential.user!.uid).set({
         'uid': credential.user!.uid,
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),

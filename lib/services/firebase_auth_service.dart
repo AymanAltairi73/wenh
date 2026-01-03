@@ -20,7 +20,7 @@ class FirebaseAuthService {
       );
 
       // Create user document if not exists
-      await _createUserDocumentIfNotExists(credential.user!);
+      await createUserDocumentIfNotExists(credential.user!);
 
       final userDoc = await _firestore
           .collection('workers')
@@ -69,7 +69,7 @@ class FirebaseAuthService {
       );
 
       // Create user document if not exists
-      await _createUserDocumentIfNotExists(credential.user!);
+      await createUserDocumentIfNotExists(credential.user!);
 
       final userDoc = await _firestore
           .collection('admins')
@@ -121,7 +121,7 @@ class FirebaseAuthService {
       );
 
       // Create user document if not exists
-      await _createUserDocumentIfNotExists(credential.user!);
+      await createUserDocumentIfNotExists(credential.user!);
 
       await _firestore.collection('workers').doc(credential.user!.uid).set({
         'uid': credential.user!.uid,
@@ -160,7 +160,7 @@ class FirebaseAuthService {
       final user = userCredential.user!;
 
       // Create user document if not exists
-      await _createUserDocumentIfNotExists(user);
+      await createUserDocumentIfNotExists(user);
 
       final userDoc = await _firestore
           .collection('workers')
@@ -247,7 +247,7 @@ class FirebaseAuthService {
       final user = userCredential.user!;
 
       // Create user document if not exists
-      await _createUserDocumentIfNotExists(user);
+      await createUserDocumentIfNotExists(user);
 
       final userDoc = await _firestore.collection('admins').doc(user.uid).get();
 
@@ -296,7 +296,7 @@ class FirebaseAuthService {
 
   /// Creates a user document in Firestore if it doesn't exist
   /// Called after any successful authentication
-  Future<void> _createUserDocumentIfNotExists(User user) async {
+  Future<void> createUserDocumentIfNotExists(User user) async {
     try {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       
