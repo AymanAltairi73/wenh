@@ -75,13 +75,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   Widget _buildLogo() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: 120,
+      height: 120,
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: AppColors.vibrantGradient,
         shape: BoxShape.circle,
         boxShadow: [AppColors.cardShadowHeavy],
       ),
-      child: const Icon(AppIcons.admin, size: 80, color: Colors.white),
+      child: const Icon(
+        Icons.admin_panel_settings_outlined,
+        size: 80,
+        color: Colors.white,
+      ),
     );
   }
 

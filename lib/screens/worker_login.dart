@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
 import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/widgets/custom_button.dart';
+import 'package:wenh/core/theme/app_colors.dart';
 
 class WorkerLoginScreen extends StatefulWidget {
   const WorkerLoginScreen({super.key});
@@ -90,18 +91,30 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                                 horizontal: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
+                                gradient: AppColors.vibrantGradient,
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
                                 children: [
                                   Hero(
                                     tag: 'app_logo',
-                                    child: Image.asset(
-                                      'assets/images/logo.png',
+                                    child: Container(
+                                      width: 72,
                                       height: 72,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.handyman,
-                                        size: 56,
+                                      decoration: BoxDecoration(
+                                        gradient: AppColors.vibrantGradient,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.white.withOpacity(0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.work_outline,
+                                        size: 36,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -220,11 +233,17 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                               final loading = state is AuthLoading;
                               return OutlinedButton.icon(
                                 onPressed: loading ? null : _loginWithGoogle,
-                                icon: Image.asset(
-                                  'assets/images/logo.png',
-                                  height: 24,
-                                  errorBuilder: (_, __, ___) =>
-                                      const Icon(Icons.g_mobiledata, size: 24),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.vibrantGradient,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.workspaces_outline,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 label: const Text('تسجيل الدخول بواسطة Google'),
                                 style: OutlinedButton.styleFrom(

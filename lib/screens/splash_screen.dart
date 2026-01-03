@@ -138,20 +138,20 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    gradient: AppColors.vibrantGradient,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: AppColors.primary.withOpacity(0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.handyman,
+                    Icons.work_outline,
                     size: 80,
-                    color: AppColors.primary,
+                    color: Colors.white,
                   ),
                 ),
               ),

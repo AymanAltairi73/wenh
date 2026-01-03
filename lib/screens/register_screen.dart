@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
 import 'package:wenh/widgets/custom_button.dart';
+import 'package:wenh/core/theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -66,20 +67,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.teal, Colors.teal.shade300],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              gradient: AppColors.vibrantGradient,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
                               children: [
                                 Hero(
                                   tag: 'app_logo',
-                                  child: Image.asset(
-                                    'assets/images/logo.png',
+                                  child: Container(
+                                    width: 72,
                                     height: 72,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.handyman, size: 56, color: Colors.white),
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.vibrantGradient,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_add_outlined,
+                                      size: 36,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
