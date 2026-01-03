@@ -48,7 +48,7 @@ class RoleSelectionScreen extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              gradient: AppColors.purpleIndigoGradient,
+                              gradient: AppColors.vibrantGradient,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -84,7 +84,7 @@ class RoleSelectionScreen extends StatelessWidget {
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 foreground: Paint()
-                                  ..shader = AppColors.purpleIndigoGradient.createShader(
+                                  ..shader = AppColors.vibrantGradient.createShader(
                                     const Rect.fromLTWH(0, 0, 200, 70),
                                   ),
                               ),

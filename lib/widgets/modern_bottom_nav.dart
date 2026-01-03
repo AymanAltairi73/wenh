@@ -57,7 +57,7 @@ class ModernBottomNav extends StatelessWidget {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         gradient: isSelected
-                            ? AppColors.purpleIndigoGradient
+                            ? AppColors.vibrantGradient
                             : null,
                         borderRadius: BorderRadius.circular(12),
                       ),

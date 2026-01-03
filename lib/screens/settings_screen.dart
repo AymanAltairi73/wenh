@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            gradient: AppColors.purpleIndigoGradient,
+                            gradient: AppColors.vibrantGradient,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -226,7 +226,7 @@ class SettingsScreen extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
         gradient: isSelected
-            ? AppColors.purpleIndigoGradient
+            ? AppColors.vibrantGradient
             : null,
         color: isSelected
             ? null

@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: BoxDecoration(
           gradient: isDark
               ? AppColors.darkBackgroundGradient
-              : AppColors.purpleIndigoGradient,
+              : AppColors.vibrantGradient,
         ),
         child: Center(
           child: Column(

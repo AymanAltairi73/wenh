@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import '../models/worker_model.dart';
 import '../models/admin_model.dart';
 
@@ -17,6 +18,9 @@ class FirebaseAuthService {
         email: email,
         password: password,
       );
+
+      // Create user document if not exists
+      await _createUserDocumentIfNotExists(credential.user!);
 
       final userDoc = await _firestore
           .collection('workers')
@@ -63,6 +67,9 @@ class FirebaseAuthService {
         email: email,
         password: password,
       );
+
+      // Create user document if not exists
+      await _createUserDocumentIfNotExists(credential.user!);
 
       final userDoc = await _firestore
           .collection('admins')
@@ -113,6 +120,9 @@ class FirebaseAuthService {
         password: password,
       );
 
+      // Create user document if not exists
+      await _createUserDocumentIfNotExists(credential.user!);
+
       await _firestore.collection('workers').doc(credential.user!.uid).set({
         'uid': credential.user!.uid,
         'email': email,
@@ -148,6 +158,9 @@ class FirebaseAuthService {
 
       final userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
+
+      // Create user document if not exists
+      await _createUserDocumentIfNotExists(user);
 
       final userDoc = await _firestore
           .collection('workers')
@@ -233,6 +246,9 @@ class FirebaseAuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user!;
 
+      // Create user document if not exists
+      await _createUserDocumentIfNotExists(user);
+
       final userDoc = await _firestore.collection('admins').doc(user.uid).get();
 
       if (!userDoc.exists) {
@@ -276,6 +292,26 @@ class FirebaseAuthService {
   Future<void> logout() async {
     await _auth.signOut();
     await _googleSignIn.signOut();
+  }
+
+  /// Creates a user document in Firestore if it doesn't exist
+  /// Called after any successful authentication
+  Future<void> _createUserDocumentIfNotExists(User user) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      
+      if (!userDoc.exists) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'email': user.email,
+          'role': 'user',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      debugPrint('[FirebaseAuthService] Error creating user document: $e');
+      // Don't throw - user creation failure shouldn't block auth
+    }
   }
 
   String _handleAuthException(FirebaseAuthException e) {

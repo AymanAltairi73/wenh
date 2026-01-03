@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme/app_colors.dart';
@@ -65,13 +66,13 @@ class ThemeCubit extends Cubit<ThemeState> {
           onBackground: AppColors.textPrimary,
         ),
 
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           elevation: 0,
           centerTitle: true,
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.textPrimary,
-          iconTheme: IconThemeData(color: AppColors.primary),
-          titleTextStyle: TextStyle(
+          iconTheme: const IconThemeData(color: AppColors.primary),
+          titleTextStyle: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -83,24 +84,25 @@ class ThemeCubit extends Cubit<ThemeState> {
           color: AppColors.surface,
           shadowColor: AppColors.cardShadow,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
           ),
+          clipBehavior: Clip.antiAlias,
         ),
 
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            elevation: 4,
-            shadowColor: AppColors.primary.withOpacity(0.3),
+            elevation: 6,
+            shadowColor: AppColors.primary.withOpacity(0.25),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -108,9 +110,9 @@ class ThemeCubit extends Cubit<ThemeState> {
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: 8,
+          elevation: 12,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
 
@@ -118,33 +120,33 @@ class ThemeCubit extends Cubit<ThemeState> {
           filled: true,
           fillColor: AppColors.surfaceVariant,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.1)),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.2)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.1)),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.2)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.error),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.error, width: 1.5),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.error, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
-            vertical: 20,
+            vertical: 18,
           ),
           hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
           labelStyle: const TextStyle(
             color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
 
@@ -270,24 +272,25 @@ class ThemeCubit extends Cubit<ThemeState> {
           color: AppColors.cardDark,
           shadowColor: AppColors.cardShadowDark,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
           ),
+          clipBehavior: Clip.antiAlias,
         ),
 
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryLight,
             foregroundColor: Colors.white,
-            elevation: 6,
-            shadowColor: AppColors.primaryLight.withOpacity(0.4),
+            elevation: 8,
+            shadowColor: AppColors.primaryLight.withOpacity(0.3),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -295,9 +298,9 @@ class ThemeCubit extends Cubit<ThemeState> {
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.primaryLight,
           foregroundColor: Colors.white,
-          elevation: 8,
+          elevation: 16,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
 
@@ -305,45 +308,45 @@ class ThemeCubit extends Cubit<ThemeState> {
           filled: true,
           fillColor: AppColors.surfaceVariantDark,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: AppColors.dividerDark.withOpacity(0.2),
+              color: AppColors.dividerDark.withOpacity(0.3),
             ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: AppColors.dividerDark.withOpacity(0.2),
+              color: AppColors.dividerDark.withOpacity(0.3),
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
               color: AppColors.accentLight,
-              width: 1.5,
+              width: 2,
             ),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.errorLight),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.errorLight, width: 1.5),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
               color: AppColors.errorLight,
-              width: 1.5,
+              width: 2,
             ),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
-            vertical: 20,
+            vertical: 18,
           ),
           hintStyle: TextStyle(
-            color: AppColors.textTertiaryDark.withOpacity(0.5),
+            color: AppColors.textTertiaryDark.withOpacity(0.6),
           ),
           labelStyle: const TextStyle(
             color: AppColors.textSecondaryDark,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
 
