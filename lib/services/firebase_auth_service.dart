@@ -29,7 +29,7 @@ class FirebaseAuthService {
 
       if (!userDoc.exists) {
         await _auth.signOut();
-        throw Exception('المستخدم غير موجود');
+        throw Exception('هذا الحساب غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.');
       }
 
       final data = userDoc.data()!;
@@ -78,7 +78,7 @@ class FirebaseAuthService {
 
       if (!userDoc.exists) {
         await _auth.signOut();
-        throw Exception('المستخدم غير موجود');
+        throw Exception('هذا الحساب غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.');
       }
 
       final data = userDoc.data()!;
@@ -254,7 +254,7 @@ class FirebaseAuthService {
       if (!userDoc.exists) {
         await _auth.signOut();
         await _googleSignIn.signOut();
-        throw Exception('المستخدم غير موجود. يجب إنشاء حساب مدير أولاً');
+        throw Exception('هذا الحساب غير مسجل كمدير. يجب إنشاء حساب مدير أولاً');
       }
 
       final data = userDoc.data()!;
