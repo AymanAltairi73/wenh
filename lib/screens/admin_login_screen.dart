@@ -1,26 +1,160 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/admin_cubit.dart';
 import 'package:wenh/cubits/admin_state.dart';
+import 'package:wenh/widgets/custom_button.dart';
 import 'package:wenh/core/theme/app_colors.dart';
-import 'package:wenh/core/theme/app_icons.dart';
-import 'package:wenh/widgets/professional_dialog.dart';
-import 'package:wenh/widgets/loading_dialog.dart';
 
-class AdminLoginScreen extends StatefulWidget {
+class AdminLoginScreen extends StatelessWidget {
   const AdminLoginScreen({super.key});
 
   @override
-  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark 
+            ? AppColors.darkBackgroundGradient
+            : AppColors.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header Section
+              Expanded(
+                flex: 2,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo Section
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.logoGradient,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.admin_panel_settings_outlined,
+                        size: 50,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Title
+                    Text(
+                      'تسجيل دخول المدير',
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'أدخل بياناتك للمتابعة',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Form Section
+              Expanded(
+                flex: 3,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.surface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, -10),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        
+                        // Login Form
+                        _AdminLoginForm(isDark: isDark),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Register Link
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'ليس لديك حساب؟',
+                              style: TextStyle(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pushNamed(context, '/admin-register'),
+                              child: Text(
+                                'إنشاء حساب',
+                                style: TextStyle(
+                                  color: AppColors.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _AdminLoginScreenState extends State<AdminLoginScreen> {
+class _AdminLoginForm extends StatefulWidget {
+  final bool isDark;
+  
+  const _AdminLoginForm({required this.isDark});
+
+  @override
+  State<_AdminLoginForm> createState() => _AdminLoginFormState();
+}
+
+class _AdminLoginFormState extends State<_AdminLoginForm> {
+  final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
+  bool _obscure = true;
   bool _rememberMe = true;
-  String _selectedCountryCode = '+966'; // Default Saudi Arabia
+  String _selectedCountryCode = '+966';
 
   @override
   void dispose() {
@@ -29,97 +163,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     super.dispose();
   }
 
+  void _login() {
+    try {
+      if ((_formKey.currentState?.validate() ?? false)) {
+        context.read<AdminCubit>().loginWithPhone(
+          '$_selectedCountryCode${_phoneController.text.trim()}',
+          _passwordController.text,
+          rememberMe: _rememberMe,
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[AdminLoginScreen] _login error: $e');
+      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocListener<AdminCubit, AdminState>(
-        listener: (context, state) {
-          if (state is AdminLoading) {
-            LoadingDialog.show(context, message: 'جاري تسجيل الدخول...');
-          } else if (state is AdminAuthenticated) {
-            LoadingDialog.hide(context);
-            Navigator.of(context).pushReplacementNamed('/admin');
-          } else if (state is AdminError) {
-            LoadingDialog.hide(context);
-            ProfessionalDialog.showError(
-              context: context,
-              title: 'خطأ في تسجيل الدخول',
-              message: state.message,
-            );
-          }
-        },
-        child: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLogo(),
-                      const SizedBox(height: 48),
-                      _buildLoginCard(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogo() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        gradient: AppColors.vibrantGradient,
-        shape: BoxShape.circle,
-        boxShadow: [AppColors.cardShadowHeavy],
-      ),
-      child: const Icon(
-        Icons.admin_panel_settings_outlined,
-        size: 80,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildLoginCard() {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [AppColors.cardShadowMedium],
-      ),
+    return Form(
+      key: _formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'تسجيل دخول المدير',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.titleLarge?.color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'قم بتسجيل الدخول للوصول إلى لوحة التحكم',
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
+          // Phone Number Field
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
@@ -132,8 +197,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     width: 80,
                     child: DropdownButton<String>(
                       value: _selectedCountryCode,
-                      underline: SizedBox(),
-                      icon: Icon(Icons.arrow_drop_down, size: 20),
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, size: 20),
                       items: [
                         DropdownMenuItem(value: '+966', child: Text('🇸🇦 +966')),
                         DropdownMenuItem(value: '+971', child: Text('🇦🇪 +971')),
@@ -160,85 +225,43 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       },
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Icon(Icons.phone),
+                  const SizedBox(width: 8),
+                  Icon(Icons.phone, color: AppColors.primary),
                 ],
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'يرجى إدخال رقم الجوال';
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'مطلوب';
               }
-              if (value.trim().length < 9) {
+              if (v.trim().length < 9) {
                 return 'رقم الجوال قصير جداً';
               }
               return null;
             },
           ),
           const SizedBox(height: 20),
+          
+          // Password Field
           TextFormField(
             controller: _passwordController,
-            obscureText: _obscurePassword,
+            obscureText: _obscure,
             decoration: InputDecoration(
               labelText: 'كلمة المرور',
-              prefixIcon: const Icon(Icons.lock_rounded),
+              prefixIcon: const Icon(Icons.lock, color: AppColors.primary),
               suffixIcon: IconButton(
+                onPressed: () => setState(() => _obscure = !_obscure),
                 icon: Icon(
-                  _obscurePassword
-                      ? AppIcons.visibilityOff
-                      : AppIcons.visibility,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
+                  _obscure ? Icons.visibility : Icons.visibility_off,
+                  color: AppColors.secondary,
                 ),
               ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'يرجى إدخال كلمة المرور';
-              }
-              if (value.length < 6) {
-                return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-              }
-              return null;
-            },
+            validator: (v) => (v == null || v.isEmpty) ? 'مطلوب' : null,
           ),
           const SizedBox(height: 16),
-          // Remember Me Toggle
+          
+          // Remember Me
           Row(
             children: [
               SizedBox(
@@ -259,7 +282,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 child: Text(
                   'تذكرني',
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    color: widget.isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                     fontSize: 14,
                   ),
                 ),
@@ -267,65 +290,20 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ],
           ),
           const SizedBox(height: 32),
+          
+          // Login Button
           BlocBuilder<AdminCubit, AdminState>(
             builder: (context, state) {
               final loading = state is AdminLoading;
-              return ElevatedButton(
-                onPressed: loading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.login, size: 22),
-                    const SizedBox(width: 12),
-                    Text(
-                      loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+              return CustomButton(
+                label: loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول',
+                onPressed: loading ? null : _login,
+                icon: Icons.admin_panel_settings,
               );
             },
           ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: () => Navigator.pushNamed(context, '/admin-register'),
-          child: const Text(
-            'إنشاء حساب مدير جديد',
-            style: TextStyle(fontSize: 15),
-          ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
-
-  Future<void> _handleLogin() async {
-    try {
-      if (!_formKey.currentState!.validate()) {
-        return;
-      }
-
-      final phoneNumber = _phoneController.text.trim();
-      final password = _passwordController.text;
-
-      debugPrint('[AdminLoginScreen] Attempting login for: $phoneNumber');
-      await context.read<AdminCubit>().loginWithPhone(
-        '$_selectedCountryCode${_phoneController.text.trim()}',
-        _passwordController.text,
-        rememberMe: _rememberMe,
-      );
-    } catch (e, stackTrace) {
-      debugPrint('[AdminLoginScreen] _handleLogin error: $e');
-      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
-    }
-  }
-
 }
