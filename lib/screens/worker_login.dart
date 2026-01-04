@@ -16,45 +16,26 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _otpController = TextEditingController();
   bool _obscure = true;
   bool _rememberMe = true;
-  bool _showOtpField = false;
-  String? _verificationId;
+  String _selectedCountryCode = '+966'; // Default Saudi Arabia
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
-    _otpController.dispose();
     super.dispose();
-  }
-
-  void _verifyPhone() {
-    try {
-      if ((_formKey.currentState?.validate() ?? false)) {
-        debugPrint(
-          '[WorkerLoginScreen] Attempting phone verification for: ${_phoneController.text.trim()}',
-        );
-        context.read<AuthCubit>().verifyPhoneNumber(_phoneController.text.trim());
-      }
-    } catch (e, stackTrace) {
-      debugPrint('[WorkerLoginScreen] _verifyPhone error: $e');
-      debugPrint('[WorkerLoginScreen] stackTrace: $stackTrace');
-    }
   }
 
   void _login() {
     try {
-      if ((_formKey.currentState?.validate() ?? false) && _verificationId != null) {
+      if ((_formKey.currentState?.validate() ?? false)) {
         debugPrint(
           '[WorkerLoginScreen] Attempting login for: ${_phoneController.text.trim()}',
         );
         context.read<AuthCubit>().loginWithPhone(
-          _phoneController.text.trim(),
+          '$_selectedCountryCode${_phoneController.text.trim()}',
           _passwordController.text,
-          _verificationId!,
-          _otpController.text,
           rememberMe: _rememberMe,
         );
       }
@@ -79,14 +60,6 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));
-            } else if (state is OtpSent) {
-              setState(() {
-                _verificationId = state.verificationId;
-                _showOtpField = true;
-              });
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('تم إرسال رمز التحقق')));
             }
           },
           child: Center(
@@ -154,16 +127,54 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'رقم الجوال',
-                              prefixIcon: Icon(Icons.phone),
+                              prefixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 80,
+                                    child: DropdownButton<String>(
+                                      value: _selectedCountryCode,
+                                      underline: SizedBox(),
+                                      icon: Icon(Icons.arrow_drop_down, size: 20),
+                                      items: [
+                                        DropdownMenuItem(value: '+966', child: Text('🇸🇦 +966')),
+                                        DropdownMenuItem(value: '+971', child: Text('🇦🇪 +971')),
+                                        DropdownMenuItem(value: '+965', child: Text('🇰🇼 +965')),
+                                        DropdownMenuItem(value: '+968', child: Text('🇴🇲 +968')),
+                                        DropdownMenuItem(value: '+973', child: Text('🇧🇭 +973')),
+                                        DropdownMenuItem(value: '+962', child: Text('🇯🇴 +962')),
+                                        DropdownMenuItem(value: '+961', child: Text('🇱🇧 +961')),
+                                        DropdownMenuItem(value: '+20', child: Text('🇪🇬 +20')),
+                                        DropdownMenuItem(value: '+213', child: Text('🇩🇿 +213')),
+                                        DropdownMenuItem(value: '+216', child: Text('🇹🇳 +216')),
+                                        DropdownMenuItem(value: '+212', child: Text('🇲🇦 +212')),
+                                        DropdownMenuItem(value: '+967', child: Text('🇾🇪 +967')),
+                                        DropdownMenuItem(value: '+964', child: Text('🇮🇶 +964')),
+                                        DropdownMenuItem(value: '+970', child: Text('🇸🇾 +970')),
+                                        DropdownMenuItem(value: '+974', child: Text('🇶🇦 +974')),
+                                        DropdownMenuItem(value: '+218', child: Text('🇱🇾 +218')),
+                                        DropdownMenuItem(value: '+963', child: Text('🇮🇶 +963')),
+                                      ],
+                                      onChanged: (String? value) {
+                                        setState(() {
+                                          _selectedCountryCode = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.phone),
+                                ],
+                              ),
                             ),
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
                                 return 'مطلوب';
                               }
-                              if (!v.startsWith('+')) {
-                                return 'يجب أن يبدأ برمز الدولة (+966)';
+                              if (v.trim().length < 9) {
+                                return 'رقم الجوال قصير جداً';
                               }
                               return null;
                             },
@@ -218,40 +229,17 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                               ),
                             ],
                           ),
-                          if (_showOtpField) ..[
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _otpController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'رمز التحقق',
-                                prefixIcon: Icon(Icons.sms),
-                              ),
-                              validator: (v) =>
-                                  (v == null || v.isEmpty) ? 'مطلوب' : null,
-                            ),
-                          ],
                           const SizedBox(height: 24),
                           BlocBuilder<AuthCubit, AuthState>(
                             builder: (context, state) {
                               final loading = state is AuthLoading;
-                              if (!_showOtpField) {
-                                return CustomButton(
-                                  label: loading
-                                      ? 'جاري إرسال رمز التحقق...'
-                                      : 'إرسال رمز التحقق',
-                                  onPressed: loading ? null : _verifyPhone,
-                                  icon: Icons.phone,
-                                );
-                              } else {
-                                return CustomButton(
-                                  label: loading
-                                      ? 'جاري تسجيل الدخول...'
-                                      : 'تسجيل الدخول',
-                                  onPressed: loading ? null : _login,
-                                  icon: Icons.login,
-                                );
-                              }
+                              return CustomButton(
+                                label: loading
+                                    ? 'جاري تسجيل الدخول...'
+                                    : 'تسجيل الدخول',
+                                onPressed: loading ? null : _login,
+                                icon: Icons.login,
+                              );
                             },
                           ),
                           const SizedBox(height: 12),

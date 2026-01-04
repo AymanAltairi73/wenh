@@ -36,10 +36,3 @@ class AdminError extends AdminState {
   @override
   List<Object?> get props => [message];
 }
-
-class AdminOtpSent extends AdminState {
-  final String verificationId;
-  const AdminOtpSent(this.verificationId);
-  @override
-  List<Object?> get props => [verificationId];
-}

@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wenh/cubits/admin_cubit.dart';
+import 'package:wenh/cubits/admin_state.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
-import 'package:wenh/services/firebase_auth_service.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({super.key});
@@ -16,18 +16,19 @@ class AdminRegisterScreen extends StatefulWidget {
 
 class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  String _selectedCountryCode = '+966'; // Default Saudi Arabia
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -36,21 +37,45 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildLogo(),
-                    const SizedBox(height: 48),
-                    _buildRegisterCard(),
-                  ],
+      body: BlocListener<AdminCubit, AdminState>(
+        listener: (context, state) {
+          if (state is AdminLoading) {
+            setState(() => _isLoading = true);
+          } else {
+            setState(() => _isLoading = false);
+          }
+          
+          if (state is AdminAuthenticated) {
+            ProfessionalDialog.showSuccess(
+              context: context,
+              title: 'تم إنشاء الحساب',
+              message: 'تم إنشاء حساب المدير بنجاح',
+            );
+            Navigator.pushReplacementNamed(context, '/admin-login');
+          } else if (state is AdminError) {
+            ProfessionalDialog.showError(
+              context: context,
+              title: 'خطأ في إنشاء الحساب',
+              message: state.message,
+            );
+          }
+        },
+        child: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLogo(),
+                      const SizedBox(height: 48),
+                      _buildRegisterCard(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -134,11 +159,49 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           ),
           const SizedBox(height: 20),
           TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
             decoration: InputDecoration(
-              labelText: 'البريد الإلكتروني',
-              prefixIcon: const Icon(AppIcons.email),
+              labelText: 'رقم الجوال',
+              prefixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    child: DropdownButton<String>(
+                      value: _selectedCountryCode,
+                      underline: SizedBox(),
+                      icon: Icon(Icons.arrow_drop_down, size: 20),
+                      items: [
+                        DropdownMenuItem(value: '+966', child: Text('🇸🇦 +966')),
+                        DropdownMenuItem(value: '+971', child: Text('🇦🇪 +971')),
+                        DropdownMenuItem(value: '+965', child: Text('🇰🇼 +965')),
+                        DropdownMenuItem(value: '+968', child: Text('🇴🇲 +968')),
+                        DropdownMenuItem(value: '+973', child: Text('🇧🇭 +973')),
+                        DropdownMenuItem(value: '+962', child: Text('🇯🇴 +962')),
+                        DropdownMenuItem(value: '+961', child: Text('🇱🇧 +961')),
+                        DropdownMenuItem(value: '+20', child: Text('🇪🇬 +20')),
+                        DropdownMenuItem(value: '+213', child: Text('🇩🇿 +213')),
+                        DropdownMenuItem(value: '+216', child: Text('🇹🇳 +216')),
+                        DropdownMenuItem(value: '+212', child: Text('🇲🇦 +212')),
+                        DropdownMenuItem(value: '+967', child: Text('🇾🇪 +967')),
+                        DropdownMenuItem(value: '+964', child: Text('🇮🇶 +964')),
+                        DropdownMenuItem(value: '+970', child: Text('🇸🇾 +970')),
+                        DropdownMenuItem(value: '+974', child: Text('🇶🇦 +974')),
+                        DropdownMenuItem(value: '+218', child: Text('🇱🇾 +218')),
+                        DropdownMenuItem(value: '+963', child: Text('🇮🇶 +963')),
+                      ],
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedCountryCode = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.phone),
+                ],
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -155,10 +218,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'يرجى إدخال البريد الإلكتروني';
+                return 'يرجى إدخال رقم الجوال';
               }
-              if (!value.contains('@')) {
-                return 'البريد الإلكتروني غير صالح';
+              if (value.trim().length < 9) {
+                return 'رقم الجوال قصير جداً';
               }
               return null;
             },
@@ -246,40 +309,45 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
             },
           ),
           const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _handleRegister,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.person_add_rounded, size: 22),
-                      SizedBox(width: 12),
-                      Text(
-                        'إنشاء الحساب',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+          BlocBuilder<AdminCubit, AdminState>(
+            builder: (context, state) {
+              final loading = state is AdminLoading;
+              return ElevatedButton(
+                onPressed: loading ? null : _handleRegister,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  elevation: 0,
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_add_rounded, size: 22),
+                          SizedBox(width: 12),
+                          Text(
+                            'إنشاء الحساب',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              );
+            },
           ),
           const SizedBox(height: 16),
           TextButton(
@@ -302,38 +370,12 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final auth = FirebaseAuth.instance;
-      final firestore = FirebaseFirestore.instance;
-
-      final credential = await auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
+      debugPrint('[AdminRegisterScreen] Attempting registration for: ${_phoneController.text.trim()}');
+      await context.read<AdminCubit>().registerWithPhone(
+        phoneNumber: '$_selectedCountryCode${_phoneController.text.trim()}',
         password: _passwordController.text,
+        name: _nameController.text.trim(),
       );
-
-      // Create base user document using the auto-creation function
-      final authService = FirebaseAuthService();
-      await authService.createUserDocumentIfNotExists(credential.user!);
-
-      // Create admin-specific document
-      await firestore.collection('admins').doc(credential.user!.uid).set({
-        'uid': credential.user!.uid,
-        'email': _emailController.text.trim(),
-        'name': _nameController.text.trim(),
-        'role': 'admin',
-        'adminRole': 'AdminRole.admin',
-        'isActive': true,
-        'createdAt': FieldValue.serverTimestamp(),
-        'permissions': {},
-      });
-
-      if (mounted) {
-        await ProfessionalDialog.showSuccess(
-          context: context,
-          title: 'تم إنشاء الحساب',
-          message: 'تم إنشاء حساب المدير بنجاح',
-        );
-        Navigator.pushReplacementNamed(context, '/admin-login');
-      }
     } catch (e, stackTrace) {
       debugPrint('[AdminRegisterScreen] _handleRegister error: $e');
       debugPrint('[AdminRegisterScreen] stackTrace: $stackTrace');

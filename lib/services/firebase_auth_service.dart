@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../models/worker_model.dart';
 import '../models/admin_model.dart';
 
@@ -32,51 +31,41 @@ class FirebaseAuthService {
     }
   }
 
-  /// Sign in with phone credential and verify password
-  Future<WorkerModel?> loginWorker(String phoneNumber, String password, String verificationId, String smsCode) async {
+  /// Sign in worker with phone number and password only
+  Future<WorkerModel?> loginWorker(String phoneNumber, String password) async {
     try {
-      // Create phone credential
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-
-      // Sign in with phone credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user!;
-
-      // Verify password from Firestore
-      final userDoc = await _firestore
+      // Find worker by phone number in Firestore
+      final workersSnapshot = await _firestore
           .collection('workers')
-          .doc(user.uid)
+          .where('phone', isEqualTo: phoneNumber)
           .get();
 
-      if (!userDoc.exists) {
-        await _auth.signOut();
+      if (workersSnapshot.docs.isEmpty) {
         throw Exception('هذا الرقم غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.');
       }
 
-      final data = userDoc.data()!;
+      final workerDoc = workersSnapshot.docs.first;
+      final data = workerDoc.data();
       final storedPassword = data['password'];
 
       if (storedPassword != password) {
-        await _auth.signOut();
         throw Exception('كلمة المرور غير صحيحة');
       }
 
-      if (data['role'] != 'worker') {
-        await _auth.signOut();
-        throw Exception('هذا الحساب ليس حساب عامل');
-      }
+      // Create a custom session without Firebase Auth
+      // We'll use the worker's UID as the session identifier
+      final workerUid = workerDoc.id;
 
-      await _firestore.collection('workers').doc(user.uid).update({
+      // Update last login
+      await _firestore.collection('workers').doc(workerUid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
       return WorkerModel(
-        uid: user.uid,
+        uid: workerUid,
         name: data['name'],
         email: data['email'] ?? '',
+        phone: data['phone'] ?? phoneNumber,
         subscription: data['subscription'] ?? false,
         subscriptionActive: data['subscriptionActive'] ?? false,
         subscriptionPlan: data['subscriptionPlan'] ?? 'none',
@@ -86,93 +75,86 @@ class FirebaseAuthService {
         subscriptionEnd:
             (data['subscriptionEnd'] as Timestamp?)?.toDate() ?? DateTime.now(),
       );
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      if (e is Exception) throw e;
+      throw Exception('فشل تسجيل الدخول: $e');
     }
   }
 
-  /// Sign in admin with phone credential and verify password
-  Future<AdminModel?> loginAdmin(String phoneNumber, String password, String verificationId, String smsCode) async {
+  /// Sign in admin with phone number and password only
+  Future<AdminModel?> loginAdmin(String phoneNumber, String password) async {
     try {
-      // Create phone credential
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-
-      // Sign in with phone credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user!;
-
-      // Verify password from Firestore
-      final userDoc = await _firestore
+      // Find admin by phone number in Firestore
+      final adminsSnapshot = await _firestore
           .collection('admins')
-          .doc(user.uid)
+          .where('phone', isEqualTo: phoneNumber)
           .get();
 
-      if (!userDoc.exists) {
-        await _auth.signOut();
+      if (adminsSnapshot.docs.isEmpty) {
         throw Exception('هذا الرقم غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.');
       }
 
-      final data = userDoc.data()!;
+      final adminDoc = adminsSnapshot.docs.first;
+      final data = adminDoc.data();
       final storedPassword = data['password'];
 
       if (storedPassword != password) {
-        await _auth.signOut();
         throw Exception('كلمة المرور غير صحيحة');
       }
 
-      if (data['role'] != 'admin') {
-        await _auth.signOut();
-        throw Exception('هذا الحساب ليس حساب مدير');
-      }
+      // Create a custom session without Firebase Auth
+      // We'll use the admin's UID as the session identifier
+      final adminUid = adminDoc.id;
 
-      await _firestore.collection('admins').doc(user.uid).update({
+      // Update last login
+      await _firestore.collection('admins').doc(adminUid).update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
 
-      return AdminModel.fromJson({
-        'id': user.uid,
-        'name': data['name'],
-        'email': data['email'] ?? '',
-        'role': data['adminRole'] ?? 'AdminRole.admin',
-        'isActive': data['isActive'] ?? true,
-        'createdAt': (data['createdAt'] as Timestamp)
-            .toDate()
-            .toIso8601String(),
-        'lastLogin': DateTime.now().toIso8601String(),
-        'permissions': data['permissions'] ?? {},
-      });
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      return AdminModel(
+        id: adminUid,
+        name: data['name'],
+        email: data['email'] ?? '',
+        phone: data['phone'] ?? phoneNumber,
+        role: AdminRole.admin, // Default role
+        isActive: data['isActive'] ?? true,
+        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        permissions: Map<String, bool>.from(data['permissions'] ?? {}),
+      );
+    } catch (e) {
+      if (e is Exception) throw e;
+      throw Exception('فشل تسجيل الدخول: $e');
     }
   }
 
-  /// Register worker with phone number and password
+  /// Register worker with phone number and password only
   Future<void> registerWorker({
     required String phoneNumber,
     required String password,
     required String name,
-    required String verificationId,
-    required String smsCode,
   }) async {
     try {
-      // Create phone credential
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
+      // Check if phone number already exists
+      final existingWorker = await _firestore
+          .collection('workers')
+          .where('phone', isEqualTo: phoneNumber)
+          .get();
 
-      // Sign in with phone credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user!;
+      if (existingWorker.docs.isNotEmpty) {
+        throw Exception('رقم الجوال هذا مسجل بالفعل');
+      }
 
-      await _firestore.collection('workers').doc(user.uid).set({
-        'uid': user.uid,
-        'phoneNumber': phoneNumber,
+      // Generate a unique ID for the worker
+      final workerRef = _firestore.collection('workers').doc();
+      final workerUid = workerRef.id;
+
+      // Create worker document
+      await workerRef.set({
+        'uid': workerUid,
+        'phone': phoneNumber,
         'password': password, // Store password in Firestore
         'name': name,
+        'email': '',
         'role': 'worker',
         'subscription': false,
         'subscriptionActive': false,
@@ -181,43 +163,49 @@ class FirebaseAuthService {
         'subscriptionEnd': Timestamp.fromDate(DateTime.now()),
         'createdAt': FieldValue.serverTimestamp(),
       });
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      if (e is Exception) throw e;
+      throw Exception('فشل إنشاء الحساب: $e');
     }
   }
 
-  /// Register admin with phone number and password
+  /// Register admin with phone number and password only
   Future<void> registerAdmin({
     required String phoneNumber,
     required String password,
     required String name,
-    required String verificationId,
-    required String smsCode,
   }) async {
     try {
-      // Create phone credential
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
+      // Check if phone number already exists
+      final existingAdmin = await _firestore
+          .collection('admins')
+          .where('phone', isEqualTo: phoneNumber)
+          .get();
 
-      // Sign in with phone credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user!;
+      if (existingAdmin.docs.isNotEmpty) {
+        throw Exception('رقم الجوال هذا مسجل بالفعل');
+      }
 
-      await _firestore.collection('admins').doc(user.uid).set({
-        'uid': user.uid,
-        'phoneNumber': phoneNumber,
+      // Generate a unique ID for the admin
+      final adminRef = _firestore.collection('admins').doc();
+      final adminUid = adminRef.id;
+
+      // Create admin document
+      await adminRef.set({
+        'uid': adminUid,
+        'phone': phoneNumber,
         'password': password, // Store password in Firestore
         'name': name,
+        'email': '',
         'role': 'admin',
         'adminRole': 'AdminRole.admin',
         'isActive': true,
         'permissions': {},
         'createdAt': FieldValue.serverTimestamp(),
       });
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+    } catch (e) {
+      if (e is Exception) throw e;
+      throw Exception('فشل إنشاء الحساب: $e');
     }
   }
 
@@ -227,22 +215,4 @@ class FirebaseAuthService {
   }
 
 
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-phone-number':
-        return 'رقم الجوال غير صالح';
-      case 'user-disabled':
-        return 'هذا الحساب معطل';
-      case 'user-not-found':
-        return 'رقم الجوال غير مسجل';
-      case 'session-expired':
-        return 'انتهت جلسة رمز التحقق، يرجى إعادة المحاولة';
-      case 'quota-exceeded':
-        return 'تم تجاوز عدد محاولات التحقق، يرجى المحاولة لاحقاً';
-      case 'network-request-failed':
-        return 'تحقق من اتصال الإنترنت';
-      default:
-        return 'حدث خطأ: ${e.message}';
-    }
-  }
 }

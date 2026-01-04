@@ -44,33 +44,10 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
-  /// Verify phone number and send OTP for admin
-  Future<void> verifyPhoneNumber(String phoneNumber) async {
-    emit(const AdminLoading());
-    try {
-      await _authService.verifyPhoneNumber(
-        phoneNumber,
-        (verificationId) {
-          emit(AdminOtpSent(verificationId));
-        },
-        (error) {
-          emit(AdminError(_handleAuthException(error)));
-          emit(const AdminInitial());
-        },
-      );
-    } catch (e) {
-      debugPrint('[AdminCubit] verifyPhoneNumber error: $e');
-      emit(AdminError(e.toString()));
-      emit(const AdminInitial());
-    }
-  }
-
-  /// Login admin with phone number, password, and OTP
+  /// Login admin with phone number and password only
   Future<void> loginWithPhone(
     String phoneNumber,
-    String password,
-    String verificationId,
-    String smsCode, {
+    String password, {
     bool rememberMe = false,
   }) async {
     emit(const AdminLoading());
@@ -78,8 +55,6 @@ class AdminCubit extends Cubit<AdminState> {
       final admin = await _authService.loginAdmin(
         phoneNumber,
         password,
-        verificationId,
-        smsCode,
       );
       if (admin != null && admin.isActive) {
         currentAdmin = admin;
@@ -93,25 +68,19 @@ class AdminCubit extends Cubit<AdminState> {
 
         emit(AdminAuthenticated(admin));
       } else {
-        emit(const AdminError('الحساب غير نشط أو غير موجود'));
-        emit(const AdminInitial());
+        emit(const AdminError('فشل تسجيل الدخول'));
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('[AdminCubit] loginWithPhone error: $e');
-      debugPrint('[AdminCubit] stackTrace: $stackTrace');
       emit(AdminError(e.toString()));
-      emit(const AdminInitial());
     }
   }
 
-
-  /// Register admin with phone number and password
+  /// Register admin with phone number and password only
   Future<void> registerWithPhone({
     required String phoneNumber,
     required String password,
     required String name,
-    required String verificationId,
-    required String smsCode,
   }) async {
     emit(const AdminLoading());
     try {
@@ -119,11 +88,9 @@ class AdminCubit extends Cubit<AdminState> {
         phoneNumber: phoneNumber,
         password: password,
         name: name,
-        verificationId: verificationId,
-        smsCode: smsCode,
       );
       // Auto-login after registration
-      await loginWithPhone(phoneNumber, password, verificationId, smsCode);
+      await loginWithPhone(phoneNumber, password);
     } catch (e, stackTrace) {
       debugPrint('[AdminCubit] registerWithPhone error: $e');
       debugPrint('[AdminCubit] stackTrace: $stackTrace');
@@ -132,25 +99,6 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
-  /// Handle Firebase Auth exceptions
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-phone-number':
-        return 'رقم الجوال غير صالح';
-      case 'user-disabled':
-        return 'هذا الحساب معطل';
-      case 'user-not-found':
-        return 'رقم الجوال غير مسجل';
-      case 'session-expired':
-        return 'انتهت جلسة رمز التحقق، يرجى إعادة المحاولة';
-      case 'quota-exceeded':
-        return 'تم تجاوز عدد محاولات التحقق، يرجى المحاولة لاحقاً';
-      case 'network-request-failed':
-        return 'تحقق من اتصال الإنترنت';
-      default:
-        return 'حدث خطأ: ${e.message}';
-    }
-  }
 
   Future<void> logout() async {
     await _authService.logout();

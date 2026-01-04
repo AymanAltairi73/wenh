@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/admin_cubit.dart';
@@ -18,18 +17,15 @@ class AdminLoginScreen extends StatefulWidget {
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _rememberMe = true;
-  bool _showOtpField = false;
-  String? _verificationId;
+  String _selectedCountryCode = '+966'; // Default Saudi Arabia
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
-    _otpController.dispose();
     super.dispose();
   }
 
@@ -49,17 +45,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               context: context,
               title: 'خطأ في تسجيل الدخول',
               message: state.message,
-            );
-          } else if (state is AdminOtpSent) {
-            LoadingDialog.hide(context);
-            setState(() {
-              _verificationId = state.verificationId;
-              _showOtpField = true;
-            });
-            ProfessionalDialog.showSuccess(
-              context: context,
-              title: 'تم إرسال رمز التحقق',
-              message: 'يرجى إدخال رمز التحقق المرسل',
             );
           }
         },
@@ -140,7 +125,45 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
               labelText: 'رقم الجوال',
-              prefixIcon: const Icon(Icons.phone),
+              prefixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 80,
+                    child: DropdownButton<String>(
+                      value: _selectedCountryCode,
+                      underline: SizedBox(),
+                      icon: Icon(Icons.arrow_drop_down, size: 20),
+                      items: [
+                        DropdownMenuItem(value: '+966', child: Text('🇸🇦 +966')),
+                        DropdownMenuItem(value: '+971', child: Text('🇦🇪 +971')),
+                        DropdownMenuItem(value: '+965', child: Text('🇰🇼 +965')),
+                        DropdownMenuItem(value: '+968', child: Text('🇴🇲 +968')),
+                        DropdownMenuItem(value: '+973', child: Text('🇧🇭 +973')),
+                        DropdownMenuItem(value: '+962', child: Text('🇯🇴 +962')),
+                        DropdownMenuItem(value: '+961', child: Text('🇱🇧 +961')),
+                        DropdownMenuItem(value: '+20', child: Text('🇪🇬 +20')),
+                        DropdownMenuItem(value: '+213', child: Text('🇩🇿 +213')),
+                        DropdownMenuItem(value: '+216', child: Text('🇹🇳 +216')),
+                        DropdownMenuItem(value: '+212', child: Text('🇲🇦 +212')),
+                        DropdownMenuItem(value: '+967', child: Text('🇾🇪 +967')),
+                        DropdownMenuItem(value: '+964', child: Text('🇮🇶 +964')),
+                        DropdownMenuItem(value: '+970', child: Text('🇸🇾 +970')),
+                        DropdownMenuItem(value: '+974', child: Text('🇶🇦 +974')),
+                        DropdownMenuItem(value: '+218', child: Text('🇱🇾 +218')),
+                        DropdownMenuItem(value: '+963', child: Text('🇮🇶 +963')),
+                      ],
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedCountryCode = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.phone),
+                ],
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -162,8 +185,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               if (value == null || value.isEmpty) {
                 return 'يرجى إدخال رقم الجوال';
               }
-              if (!value.startsWith('+')) {
-                return 'يجب أن يبدأ برمز الدولة (+966)';
+              if (value.trim().length < 9) {
+                return 'رقم الجوال قصير جداً';
               }
               return null;
             },
@@ -243,126 +266,50 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
             ],
           ),
-          if (_showOtpField) ..[
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _otpController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'رمز التحقق',
-                prefixIcon: const Icon(Icons.sms),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'يرجى إدخال رمز التحقق';
-                }
-                return null;
-              },
-            ),
-          ],
           const SizedBox(height: 32),
           BlocBuilder<AdminCubit, AdminState>(
             builder: (context, state) {
               final loading = state is AdminLoading;
-              if (!_showOtpField) {
-                return ElevatedButton(
-                  onPressed: loading ? null : _handlePhoneVerification,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              return ElevatedButton(
+                onPressed: loading ? null : _handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.login, size: 22),
+                    const SizedBox(width: 12),
+                    Text(
+                      loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.phone, size: 22),
-                      const SizedBox(width: 12),
-                      Text(
-                        loading ? 'جاري إرسال رمز التحقق...' : 'إرسال رمز التحقق',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                );
-              } else {
-                return ElevatedButton(
-                  onPressed: loading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(AppIcons.login, size: 22),
-                      const SizedBox(width: 12),
-                      Text(
-                        loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                  ],
+                ),
+              );
             },
           ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/admin-register'),
-            child: const Text(
-              'إنشاء حساب مدير جديد',
-              style: TextStyle(fontSize: 15),
-            ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => Navigator.pushNamed(context, '/admin-register'),
+          child: const Text(
+            'إنشاء حساب مدير جديد',
+            style: TextStyle(fontSize: 15),
           ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handlePhoneVerification() async {
-    try {
-      if (!_formKey.currentState!.validate()) {
-        return;
-      }
-
-      final phoneNumber = _phoneController.text.trim();
-
-      debugPrint('[AdminLoginScreen] Attempting phone verification for: $phoneNumber');
-      await context.read<AdminCubit>().verifyPhoneNumber(phoneNumber);
-    } catch (e, stackTrace) {
-      debugPrint('[AdminLoginScreen] _handlePhoneVerification error: $e');
-      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
-    }
+        ),
+      ],
+    ));
   }
 
   Future<void> _handleLogin() async {
     try {
-      if (!_formKey.currentState!.validate() || _verificationId == null) {
+      if (!_formKey.currentState!.validate()) {
         return;
       }
 
@@ -371,10 +318,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
       debugPrint('[AdminLoginScreen] Attempting login for: $phoneNumber');
       await context.read<AdminCubit>().loginWithPhone(
-        phoneNumber,
-        password,
-        _verificationId!,
-        _otpController.text,
+        '$_selectedCountryCode${_phoneController.text.trim()}',
+        _passwordController.text,
         rememberMe: _rememberMe,
       );
     } catch (e, stackTrace) {

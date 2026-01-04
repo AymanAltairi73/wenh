@@ -5,6 +5,7 @@ class WorkerModel extends Equatable {
   final String uid;
   final String name;
   final String email;
+  final String phone;
   final bool subscription; // legacy: maybe keep for compatibility or replace
   final bool subscriptionActive;
   final String subscriptionPlan; // 'weekly' | 'monthly' | 'none'
@@ -15,6 +16,7 @@ class WorkerModel extends Equatable {
     required this.uid,
     required this.name,
     required this.email,
+    required this.phone,
     required this.subscription,
     required this.subscriptionActive,
     required this.subscriptionPlan,
@@ -27,6 +29,7 @@ class WorkerModel extends Equatable {
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
+      phone: map['phone'] ?? '',
       subscription: map['subscription'] ?? false,
       subscriptionActive: map['subscriptionActive'] ?? false,
       subscriptionPlan: map['subscriptionPlan'] ?? 'none',
@@ -42,6 +45,7 @@ class WorkerModel extends Equatable {
       'uid': uid,
       'name': name,
       'email': email,
+      'phone': phone,
       'subscription': subscription,
       'subscriptionActive': subscriptionActive,
       'subscriptionPlan': subscriptionPlan,
@@ -58,6 +62,7 @@ class WorkerModel extends Equatable {
     uid,
     name,
     email,
+    phone,
     subscription,
     subscriptionActive,
     subscriptionPlan,

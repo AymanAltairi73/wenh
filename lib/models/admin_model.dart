@@ -10,6 +10,7 @@ class AdminModel extends Equatable {
   final String id;
   final String name;
   final String email;
+  final String phone;
   final AdminRole role;
   final bool isActive;
   final DateTime createdAt;
@@ -20,6 +21,7 @@ class AdminModel extends Equatable {
     required this.id,
     required this.name,
     required this.email,
+    required this.phone,
     required this.role,
     required this.isActive,
     required this.createdAt,
@@ -47,6 +49,7 @@ class AdminModel extends Equatable {
     String? id,
     String? name,
     String? email,
+    String? phone,
     AdminRole? role,
     bool? isActive,
     DateTime? createdAt,
@@ -57,6 +60,7 @@ class AdminModel extends Equatable {
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
@@ -70,6 +74,7 @@ class AdminModel extends Equatable {
       'id': id,
       'name': name,
       'email': email,
+      'phone': phone,
       'role': role.toString(),
       'isActive': isActive,
       'createdAt': createdAt.toIso8601String(),
@@ -83,6 +88,7 @@ class AdminModel extends Equatable {
       id: json['id'] as String,
       name: json['name'] as String,
       email: json['email'] as String,
+      phone: json['phone'] as String? ?? '',
       role: AdminRole.values.firstWhere(
         (e) => e.toString() == json['role'],
         orElse: () => AdminRole.moderator,
@@ -129,5 +135,5 @@ class AdminModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, email, role, isActive, createdAt, lastLogin, permissions];
+  List<Object?> get props => [id, name, email, phone, role, isActive, createdAt, lastLogin, permissions];
 }

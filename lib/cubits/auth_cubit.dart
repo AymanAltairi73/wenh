@@ -70,33 +70,10 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Verify phone number and send OTP
-  Future<void> verifyPhoneNumber(String phoneNumber) async {
-    emit(const AuthLoading());
-    try {
-      await _authService.verifyPhoneNumber(
-        phoneNumber,
-        (verificationId) {
-          emit(OtpSent(verificationId));
-        },
-        (error) {
-          emit(AuthError(_handleAuthException(error)));
-          emit(const AuthInitial());
-        },
-      );
-    } catch (e) {
-      debugPrint('[AuthCubit] verifyPhoneNumber error: $e');
-      emit(AuthError(e.toString()));
-      emit(const AuthInitial());
-    }
-  }
-
-  /// Login with phone number, password, and OTP
+  /// Login with phone number and password only
   Future<void> loginWithPhone(
     String phoneNumber,
-    String password,
-    String verificationId,
-    String smsCode, {
+    String password, {
     bool rememberMe = false,
   }) async {
     emit(const AuthLoading());
@@ -104,8 +81,6 @@ class AuthCubit extends Cubit<AuthState> {
       final worker = await _authService.loginWorker(
         phoneNumber,
         password,
-        verificationId,
-        smsCode,
       );
       if (worker != null) {
         current = worker;
@@ -118,23 +93,20 @@ class AuthCubit extends Cubit<AuthState> {
         );
 
         emit(Authenticated(worker));
+      } else {
+        emit(const AuthError('فشل تسجيل الدخول'));
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('[AuthCubit] loginWithPhone error: $e');
-      debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
-      emit(const AuthInitial());
     }
   }
 
-
-  /// Register worker with phone number and password
+  /// Register worker with phone number and password only
   Future<void> registerWithPhone({
     required String phoneNumber,
     required String password,
     required String name,
-    required String verificationId,
-    required String smsCode,
   }) async {
     emit(const AuthLoading());
     try {
@@ -142,11 +114,9 @@ class AuthCubit extends Cubit<AuthState> {
         phoneNumber: phoneNumber,
         password: password,
         name: name,
-        verificationId: verificationId,
-        smsCode: smsCode,
       );
       // Auto-login after registration
-      await loginWithPhone(phoneNumber, password, verificationId, smsCode);
+      await loginWithPhone(phoneNumber, password);
     } catch (e, stackTrace) {
       debugPrint('[AuthCubit] registerWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');
@@ -155,25 +125,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Handle Firebase Auth exceptions
-  String _handleAuthException(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-phone-number':
-        return 'رقم الجوال غير صالح';
-      case 'user-disabled':
-        return 'هذا الحساب معطل';
-      case 'user-not-found':
-        return 'رقم الجوال غير مسجل';
-      case 'session-expired':
-        return 'انتهت جلسة رمز التحقق، يرجى إعادة المحاولة';
-      case 'quota-exceeded':
-        return 'تم تجاوز عدد محاولات التحقق، يرجى المحاولة لاحقاً';
-      case 'network-request-failed':
-        return 'تحقق من اتصال الإنترنت';
-      default:
-        return 'حدث خطأ: ${e.message}';
-    }
-  }
 
   Future<void> logout() async {
     await _authService.logout();
