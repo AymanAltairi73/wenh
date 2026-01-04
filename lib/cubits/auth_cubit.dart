@@ -23,6 +23,76 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (shouldAutoLogin && currentUser != null) {
         // User is authenticated and Remember Me is enabled
+        // First, check user role from users collection
+        try {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .get();
+
+          if (userDoc.exists) {
+            final userData = userDoc.data()!;
+            final role = userData['role'] as String?;
+            
+            if (role == 'worker') {
+              // Fetch worker data from workers collection
+              final workerDoc = await FirebaseFirestore.instance
+                  .collection('workers')
+                  .doc(currentUser.uid)
+                  .get();
+
+              if (workerDoc.exists) {
+                final worker = WorkerModel.fromMap(workerDoc.data()!);
+                current = worker;
+                emit(Authenticated(worker));
+                return;
+              }
+            } else if (role == 'admin') {
+              // Handle admin user
+              final adminDoc = await FirebaseFirestore.instance
+                  .collection('admins')
+                  .doc(currentUser.uid)
+                  .get();
+
+              if (adminDoc.exists) {
+                final adminData = adminDoc.data()!;
+                final worker = WorkerModel(
+                  uid: currentUser.uid,
+                  name: adminData['name'] ?? 'Admin',
+                  email: adminData['email'] ?? currentUser.email ?? '',
+                  subscription: true,
+                  subscriptionActive: true,
+                  subscriptionPlan: 'admin',
+                  subscriptionStart: DateTime.now(),
+                  subscriptionEnd: DateTime.now().add(const Duration(days: 365)),
+                );
+                current = worker;
+                emit(Authenticated(worker));
+                return;
+              }
+            } else if (role == 'customer') {
+              // Handle customer user
+              final customerData = userData;
+              final worker = WorkerModel(
+                uid: currentUser.uid,
+                name: customerData['name'] ?? 'Customer',
+                email: customerData['email'] ?? currentUser.email ?? '',
+                subscription: false,
+                subscriptionActive: false,
+                subscriptionPlan: 'customer',
+                subscriptionStart: DateTime.now(),
+                subscriptionEnd: DateTime.now().add(const Duration(days: 365)),
+              );
+              current = worker;
+              emit(Authenticated(worker));
+              return;
+            }
+          }
+        } catch (e) {
+          debugPrint('[AuthCubit] Error checking user role: $e');
+        }
+
+        // Fallback to old logic for backward compatibility
         final userType = await _storageService.getUserType();
 
         if (userType == 'worker') {
@@ -138,9 +208,31 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
-    await _authService.logout();
-    await _storageService.clearAll(); // Clear Remember Me preference
-    current = null;
-    emit(const AuthInitial());
+    try {
+      emit(const AuthLoading());
+      
+      // Clear all cached data
+      await _storageService.clearAll();
+      await _authService.logout();
+      
+      // Clear current user
+      current = null;
+      
+      // Clear Firestore cache
+      try {
+        await FirebaseFirestore.instance.clearPersistence();
+      } catch (e) {
+        debugPrint('[AuthCubit] Error clearing Firestore cache: $e');
+      }
+      
+      // Emit initial state
+      emit(const AuthInitial());
+      
+      debugPrint('[AuthCubit] User logged out successfully');
+    } catch (e) {
+      debugPrint('[AuthCubit] Logout error: $e');
+      // Still emit initial state even if there's an error
+      emit(const AuthInitial());
+    }
   }
 }

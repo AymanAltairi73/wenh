@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/request_model.dart';
 import '../services/firestore_service.dart';
 import 'request_state.dart';
@@ -13,7 +14,14 @@ class RequestCubit extends Cubit<RequestState> {
     : _firestoreService = firestoreService ?? FirestoreService(),
       super(const RequestInitial());
 
+  bool get _isAuthenticated => FirebaseAuth.instance.currentUser != null;
+
   void getRequests({String? status, String? area}) {
+    if (!_isAuthenticated) {
+      emit(const RequestError('يجب تسجيل الدخول للوصول إلى الطلبات'));
+      return;
+    }
+
     emit(const RequestLoading());
 
     try {
@@ -42,6 +50,11 @@ class RequestCubit extends Cubit<RequestState> {
     required String area,
     required String description,
   }) async {
+    if (!_isAuthenticated) {
+      emit(const RequestError('يجب تسجيل الدخول لإنشاء طلب'));
+      return;
+    }
+
     try {
       final request = RequestModel(
         id: '',
@@ -64,6 +77,11 @@ class RequestCubit extends Cubit<RequestState> {
     required String workerName,
     required bool isSubscribed,
   }) async {
+    if (!_isAuthenticated) {
+      emit(const RequestError('يجب تسجيل الدخول لاستلام الطلبات'));
+      return;
+    }
+
     if (!isSubscribed) {
       emit(const RequestError('يجب أن يكون لديك اشتراك نشط لاستلام الطلبات'));
       return;
@@ -82,6 +100,11 @@ class RequestCubit extends Cubit<RequestState> {
     required String status,
     String? cancelReason,
   }) async {
+    if (!_isAuthenticated) {
+      emit(const RequestError('يجب تسجيل الدخول لتحديث حالة الطلب'));
+      return;
+    }
+
     try {
       await _firestoreService.updateRequestStatus(
         id,
@@ -96,6 +119,11 @@ class RequestCubit extends Cubit<RequestState> {
   }
 
   Future<void> deleteRequest(String id) async {
+    if (!_isAuthenticated) {
+      emit(const RequestError('يجب تسجيل الدخول لحذف الطلب'));
+      return;
+    }
+
     try {
       await _firestoreService.deleteRequest(id);
     } catch (e, stackTrace) {

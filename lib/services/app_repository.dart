@@ -152,49 +152,92 @@ class AppRepository {
 
   // --- Analytics & Metrics ---
   
-  /// Get aggregated statistics
+  /// Get aggregated statistics from admin_stats document
   Future<Map<String, dynamic>> getStatistics() async {
     try {
-      final requestsSnapshot = await _firestore
-          .collection('requests')
+      // Try to get from admin_stats first
+      final statsDoc = await _firestore
+          .collection('admin_stats')
+          .doc('stats')
           .get();
 
-      final workersSnapshot = await _firestore
-          .collection('workers')
-          .get();
+      if (statsDoc.exists) {
+        final data = statsDoc.data()!;
+        return {
+          'totalRequests': data['totalRequests'] ?? 0,
+          'totalWorkers': data['totalWorkers'] ?? 0,
+          'newRequests': data['newRequests'] ?? 0,
+          'activeWorkers': data['activeWorkers'] ?? 0,
+          'totalRevenue': data['totalRevenue'] ?? 0,
+          'weeklyCount': data['weeklyCount'] ?? 0,
+          'monthlyCount': data['monthlyCount'] ?? 0,
+          'lastUpdated': data['lastUpdated'],
+        };
+      }
 
-      final workers = workersSnapshot.docs
-          .map((doc) => WorkerModel.fromMap(doc.data()))
-          .toList();
-
-      // Calculate subscription counts
-      final weeklyCount = workers
-          .where((worker) => worker.subscriptionPlan == 'weekly')
-          .length;
-      
-      final monthlyCount = workers
-          .where((worker) => worker.subscriptionPlan == 'monthly')
-          .length;
-
-      // Calculate revenue (assuming weekly = 5000 IQD, monthly = 15000 IQD)
-      final totalRevenue = (weeklyCount * 5000) + (monthlyCount * 15000);
-
-      return {
-        'totalRequests': requestsSnapshot.docs.length,
-        'totalWorkers': workersSnapshot.docs.length,
-        'newRequests': requestsSnapshot.docs
-            .where((doc) => doc.data()['status'] == 'new')
-            .length,
-        'activeWorkers': workersSnapshot.docs
-            .where((doc) => doc.data()['subscriptionActive'] == true)
-            .length,
-        'totalRevenue': totalRevenue,
-        'weeklyCount': weeklyCount,
-        'monthlyCount': monthlyCount,
-      };
+      // Fallback to calculation if no stats document exists
+      return await _calculateStatistics();
     } catch (e) {
       throw _handleError(e, 'Failed to fetch statistics');
     }
+  }
+
+  /// Update admin statistics document
+  Future<void> updateStatistics() async {
+    try {
+      final stats = await _calculateStatistics();
+      
+      await _firestore
+          .collection('admin_stats')
+          .doc('stats')
+          .set({
+            ...stats,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw _handleError(e, 'Failed to update statistics');
+    }
+  }
+
+  /// Calculate statistics from collections (used as fallback)
+  Future<Map<String, dynamic>> _calculateStatistics() async {
+    final requestsSnapshot = await _firestore
+        .collection('requests')
+        .get();
+
+    final workersSnapshot = await _firestore
+        .collection('workers')
+        .get();
+
+    final workers = workersSnapshot.docs
+        .map((doc) => WorkerModel.fromMap(doc.data()))
+        .toList();
+
+    // Calculate subscription counts
+    final weeklyCount = workers
+        .where((worker) => worker.subscriptionPlan == 'weekly')
+        .length;
+    
+    final monthlyCount = workers
+        .where((worker) => worker.subscriptionPlan == 'monthly')
+        .length;
+
+    // Calculate revenue (assuming weekly = 5000 IQD, monthly = 15000 IQD)
+    final totalRevenue = (weeklyCount * 5000) + (monthlyCount * 15000);
+
+    return {
+      'totalRequests': requestsSnapshot.docs.length,
+      'totalWorkers': workersSnapshot.docs.length,
+      'newRequests': requestsSnapshot.docs
+          .where((doc) => doc.data()['status'] == 'new')
+          .length,
+      'activeWorkers': workersSnapshot.docs
+          .where((doc) => doc.data()['subscriptionActive'] == true)
+          .length,
+      'totalRevenue': totalRevenue,
+      'weeklyCount': weeklyCount,
+      'monthlyCount': monthlyCount,
+    };
   }
 
   // --- Error Handling ---
