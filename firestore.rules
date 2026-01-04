@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Read rules for all authenticated users
+    match /{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+  }
+  
+  // Collection-specific rules with more permissive access for workers
+  match /databases/{database}/documents/users/{userId} {
+    allow read, write: if request.auth != null && request.auth.uid == userId;
+  }
+  
+  match /databases/{database}/documents/workers/{workerId} {
+    allow read, write: if request.auth != null && request.auth.uid == workerId;
+  }
+  
+  match /databases/{database}/documents/admins/{adminId} {
+    allow read, write: if request.auth != null && request.auth.uid == adminId;
+  }
+  
+  match /databases/{database}/documents/requests/{requestId} {
+    allow read, write: if request.auth != null;
+    allow create: if request.auth != null;
+  }
+  
+  match /databases/{database}/documents/favorites/{userId} {
+    allow read, write: if request.auth != null && request.auth.uid == userId;
+  }
+  
+  match /databases/{database}/documents/notifications/{userId} {
+    allow read, write: if request.auth != null && request.auth.uid == userId;
+  }
+  
+  // Allow list operations on collections for authenticated users
+  match /databases/{database}/documents/workers {
+    allow list: if request.auth != null;
+  }
+  
+  match /databases/{database}/documents/requests {
+    allow list: if request.auth != null;
+  }
+  
+  match /databases/{database}/documents/admins {
+    allow list: if request.auth != null;
+  }
+  
+  // Deny all other access
+  match /databases/{database}/documents/{document=**} {
+    allow read, write: if false;
+  }
+}
+}

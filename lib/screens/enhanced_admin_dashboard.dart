@@ -1,18 +1,17 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wenh/cubits/admin_cubit.dart';
 import 'package:wenh/cubits/admin_state.dart';
-import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
+import '../cubits/admin_cubit.dart';
+import '../cubits/request_cubit.dart';
+import '../models/worker_model.dart';
+import '../services/app_repository.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:wenh/widgets/stat_card.dart';
 import 'package:wenh/widgets/request_card.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
-import 'package:wenh/models/worker_model.dart';
-import 'package:wenh/services/firestore_service.dart';
 
 class EnhancedAdminDashboard extends StatefulWidget {
   const EnhancedAdminDashboard({super.key});
@@ -119,9 +118,9 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   }
 
   Widget _buildWorkersTab() {
-    final service = FirestoreService();
-    return StreamBuilder<List<WorkerModel>>(
-      stream: service.getAllWorkers(),
+    final repository = AppRepository();
+    return FutureBuilder<List<WorkerModel>>(
+      future: repository.getWorkers(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -192,15 +191,16 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   }
 
   Widget _buildRevenueTab() {
-    final service = FirestoreService();
+    final repository = AppRepository();
     return FutureBuilder<Map<String, dynamic>>(
-      future: service.fetchRevenueStats(),
+      future: repository.getStatistics(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const Center(child: Text('خطأ في تحميل الإحصائيات'));
+        }
 
         final stats = snapshot.data!;
         return SingleChildScrollView(
@@ -216,53 +216,49 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
               const SizedBox(height: 24),
               Row(
                 children: [
-                  Expanded(
-                    child: StatCard(
-                      title: 'أرباح أسبوعية',
-                      value: '${stats['weeklyRevenue']} د.ع',
-                      icon: Icons.calendar_view_week,
-                      color: Colors.blue,
-                    ),
+                  StatCard(
+                    title: 'إجمالي العمال',
+                    value: '${stats['totalWorkers']}',
+                    icon: Icons.people,
+                    color: AppColors.primary,
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: StatCard(
-                      title: 'أرباح شهرية',
-                      value: '${stats['monthlyRevenue']} د.ع',
-                      icon: Icons.calendar_month,
-                      color: Colors.purple,
-                    ),
+                  StatCard(
+                    title: 'العمال النشطين',
+                    value: '${stats['activeWorkers']}',
+                    icon: Icons.person,
+                    color: Colors.green,
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [AppColors.softShadow],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'عدد المشتركين الفعليين',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'عدد المشتركين الفعليين',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 16),
-                      _buildRevenueRow(
-                        'خطط أسبوعية',
-                        '${stats['weeklyCount']} عمال',
-                      ),
-                      const Divider(),
-                      _buildRevenueRow(
-                        'خطط شهرية',
-                        '${stats['monthlyCount']} عمال',
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRevenueRow(
+                      'خطط أسبوعية',
+                      '${stats['weeklyCount'] ?? 0} عمال',
+                    ),
+                    const Divider(),
+                    _buildRevenueRow(
+                      'خطط شهرية',
+                      '${stats['monthlyCount'] ?? 0} عمال',
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -336,7 +332,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
             onPressed: () => Navigator.pushNamed(context, '/admin-profile'),
             icon: const Icon(AppIcons.profile),
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               foregroundColor: AppColors.primary,
             ),
           ),
@@ -345,7 +341,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
             onPressed: () => _showLogoutDialog(context),
             icon: const Icon(AppIcons.logout),
             style: IconButton.styleFrom(
-              backgroundColor: AppColors.error.withOpacity(0.1),
+              backgroundColor: AppColors.error.withValues(alpha: 0.1),
               foregroundColor: AppColors.error,
             ),
           ),
@@ -373,7 +369,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -400,7 +396,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                         admin.email,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -410,7 +406,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -539,7 +535,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
       ),
       checkmarkColor: Colors.white,
       elevation: isSelected ? 4 : 0,
-      shadowColor: AppColors.primary.withOpacity(0.3),
+      shadowColor: AppColors.primary.withValues(alpha: 0.3),
     );
   }
 
