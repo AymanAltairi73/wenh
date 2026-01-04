@@ -125,8 +125,79 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('لا يوجد عمال مسجلين'));
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'خطأ في تحميل بيانات العمال',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('جاري تحميل بيانات العمال...'),
+              ],
+            ),
+          );
+        }
+        if (snapshot.data!.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  AppIcons.workers,
+                  size: 80,
+                  color: AppColors.textDisabled,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'لا يوجد عمال مسجلين',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'سيظهر العمال هنا عند تسجيلهم في النظام',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textDisabled,
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
         final workers = snapshot.data!;

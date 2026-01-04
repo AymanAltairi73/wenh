@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
+import 'package:wenh/cubits/auth_cubit.dart';
+import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/modern_bottom_nav.dart';
@@ -50,45 +52,81 @@ class _EnhancedCustomerHomeScreenState
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? AppColors.darkBackgroundGradient
-              : AppColors.backgroundGradient,
-        ),
-        child: _buildBody(),
+      body: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          if (authState is! Authenticated) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.login,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'يرجى تسجيل الدخول للوصول إلى هذه الصفحة',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Container(
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppColors.darkBackgroundGradient
+                  : AppColors.backgroundGradient,
+            ),
+            child: _buildBody(),
+          );
+        },
       ),
-      bottomNavigationBar: ModernBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home,
-            label: 'الرئيسية',
-          ),
-          BottomNavItem(
-            icon: Icons.list_alt_outlined,
-            activeIcon: Icons.list_alt,
-            label: 'طلباتي',
-          ),
-          BottomNavItem(
-            icon: Icons.grid_view_outlined,
-            activeIcon: Icons.grid_view,
-            label: 'الخدمات',
-          ),
-          BottomNavItem(
-            icon: Icons.menu_outlined,
-            activeIcon: Icons.menu,
-            label: 'المزيد',
-          ),
-        ],
+      bottomNavigationBar: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          if (authState is! Authenticated) return const SizedBox.shrink();
+          
+          return ModernBottomNav(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            items: const [
+              BottomNavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: 'الرئيسية',
+              ),
+              BottomNavItem(
+                icon: Icons.list_alt_outlined,
+                activeIcon: Icons.list_alt,
+                label: 'طلباتي',
+              ),
+              BottomNavItem(
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view,
+                label: 'الخدمات',
+              ),
+              BottomNavItem(
+                icon: Icons.menu_outlined,
+                activeIcon: Icons.menu,
+                label: 'المزيد',
+              ),
+            ],
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/send'),
-        icon: const Icon(Icons.add),
-        label: const Text('طلب جديد'),
-        elevation: 8,
+      floatingActionButton: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          if (authState is! Authenticated) return const SizedBox.shrink();
+          
+          return FloatingActionButton.extended(
+            onPressed: () => Navigator.pushNamed(context, '/send'),
+            icon: const Icon(Icons.add),
+            label: const Text('طلب جديد'),
+            elevation: 8,
+          );
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
@@ -258,6 +296,46 @@ class _EnhancedCustomerHomeScreenState
           );
         }
 
+        if (state is RequestError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'حدث خطأ في تحميل الطلبات',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.message,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    context.read<RequestCubit>().getRequests();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (state is RequestLoaded) {
           final requests = state.requests;
 
@@ -317,7 +395,42 @@ class _EnhancedCustomerHomeScreenState
           );
         }
 
-        return const Center(child: Text('حدث خطأ في تحميل الطلبات'));
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'حدث خطأ في تحميل الطلبات',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'يرجى المحاولة مرة أخرى',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  context.read<RequestCubit>().getRequests();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
