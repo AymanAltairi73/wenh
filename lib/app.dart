@@ -12,7 +12,7 @@ import 'services/firestore_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/role_selection.dart';
-import 'screens/enhanced_customer_home_screen.dart';
+import 'screens/fixed_customer_home_screen.dart';
 import 'screens/send_request_screen.dart';
 import 'screens/worker_login.dart';
 import 'screens/enhanced_worker_requests_screen.dart';
@@ -83,7 +83,7 @@ class _AppState extends State<App> {
               '/splash': (_) => const SplashScreen(),
               '/onboarding': (_) => const OnboardingScreen(),
               '/role': (_) => const RoleSelectionScreen(),
-              '/customer': (_) => const EnhancedCustomerHomeScreen(),
+              '/customer': (_) => const FixedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
               '/register': (_) => const RegisterScreen(),

@@ -11,6 +11,7 @@ import 'package:wenh/services/location_service.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
+import 'package:wenh/utils/quick_worker_fix.dart';
 
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
@@ -23,6 +24,7 @@ class EnhancedWorkerRequestsScreen extends StatefulWidget {
 class _EnhancedWorkerRequestsScreenState
     extends State<EnhancedWorkerRequestsScreen> {
   final FilterService _filterService = FilterService();
+  final QuickWorkerFix _quickWorkerFix = QuickWorkerFix();
   final TextEditingController _searchController = TextEditingController();
   RequestFilterModel _currentFilter = const RequestFilterModel();
   bool _showMap = false;
@@ -31,7 +33,18 @@ class _EnhancedWorkerRequestsScreenState
   @override
   void initState() {
     super.initState();
+    _initializeWorker();
     _initializeFilter();
+  }
+
+  Future<void> _initializeWorker() async {
+    try {
+      debugPrint('[EnhancedWorkerRequestsScreen] Initializing worker access...');
+      await _quickWorkerFix.quickFix();
+      debugPrint('[EnhancedWorkerRequestsScreen] Worker access initialized successfully');
+    } catch (e) {
+      debugPrint('[EnhancedWorkerRequestsScreen] Error initializing worker: $e');
+    }
   }
 
   Future<void> _initializeFilter() async {
@@ -531,6 +544,26 @@ class _EnhancedWorkerRequestsScreenState
                   request: request,
                   disabled: disabled,
                   workerName: workerName,
+                  onTakeRequest: (requestId, workerName) async {
+                    try {
+                      final quickFix = QuickWorkerFix();
+                      await quickFix.takeRequest(requestId);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم استلام الطلب بنجاح'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      context.read<RequestCubit>().getRequests();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('فشل في استلام الطلب: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
                 ),
               );
             },
@@ -571,11 +604,13 @@ class _EnhancedRequestCard extends StatelessWidget {
   final RequestModel request;
   final bool disabled;
   final String workerName;
+  final Function(String requestId, String workerName) onTakeRequest;
 
   const _EnhancedRequestCard({
     required this.request,
     required this.disabled,
     required this.workerName,
+    required this.onTakeRequest,
   });
 
   IconData _getServiceIcon(String type) {
@@ -747,17 +782,7 @@ class _EnhancedRequestCard extends StatelessWidget {
                       onPressed: disabled
                           ? null
                           : () {
-                              context.read<RequestCubit>().takeRequest(
-                                id: request.id,
-                                workerName: workerName,
-                                isSubscribed: !disabled,
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('تم استلام الطلب بنجاح'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
+                              onTakeRequest(request.id, workerName);
                             },
                     ),
                   ),
