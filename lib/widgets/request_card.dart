@@ -142,12 +142,16 @@ class RequestCard extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'مستلم بواسطة: ${request.takenBy}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.success,
+                        Expanded(
+                          child: Text(
+                            'مستلم بواسطة: ${request.takenBy}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.success,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
