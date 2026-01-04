@@ -163,6 +163,22 @@ class AppRepository {
           .collection('workers')
           .get();
 
+      final workers = workersSnapshot.docs
+          .map((doc) => WorkerModel.fromMap(doc.data()))
+          .toList();
+
+      // Calculate subscription counts
+      final weeklyCount = workers
+          .where((worker) => worker.subscriptionPlan == 'weekly')
+          .length;
+      
+      final monthlyCount = workers
+          .where((worker) => worker.subscriptionPlan == 'monthly')
+          .length;
+
+      // Calculate revenue (assuming weekly = 5000 IQD, monthly = 15000 IQD)
+      final totalRevenue = (weeklyCount * 5000) + (monthlyCount * 15000);
+
       return {
         'totalRequests': requestsSnapshot.docs.length,
         'totalWorkers': workersSnapshot.docs.length,
@@ -172,6 +188,9 @@ class AppRepository {
         'activeWorkers': workersSnapshot.docs
             .where((doc) => doc.data()['subscriptionActive'] == true)
             .length,
+        'totalRevenue': totalRevenue,
+        'weeklyCount': weeklyCount,
+        'monthlyCount': monthlyCount,
       };
     } catch (e) {
       throw _handleError(e, 'Failed to fetch statistics');

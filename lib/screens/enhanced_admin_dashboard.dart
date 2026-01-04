@@ -198,8 +198,39 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'خطأ في تحميل الإحصائيات',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
         if (!snapshot.hasData) {
-          return const Center(child: Text('خطأ في تحميل الإحصائيات'));
+          return const Center(child: Text('لا توجد بيانات إحصائية'));
         }
 
         final stats = snapshot.data!;
