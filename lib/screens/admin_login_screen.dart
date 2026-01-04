@@ -16,16 +16,20 @@ class AdminLoginScreen extends StatefulWidget {
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _rememberMe = true;
+  bool _showOtpField = false;
+  String? _verificationId;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -45,6 +49,17 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               context: context,
               title: 'خطأ في تسجيل الدخول',
               message: state.message,
+            );
+          } else if (state is AdminOtpSent) {
+            LoadingDialog.hide(context);
+            setState(() {
+              _verificationId = state.verificationId;
+              _showOtpField = true;
+            });
+            ProfessionalDialog.showSuccess(
+              context: context,
+              title: 'تم إرسال رمز التحقق',
+              message: 'يرجى إدخال رمز التحقق المرسل',
             );
           }
         },
@@ -121,11 +136,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           ),
           const SizedBox(height: 32),
           TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
             decoration: InputDecoration(
-              labelText: 'البريد الإلكتروني',
-              prefixIcon: const Icon(AppIcons.email),
+              labelText: 'رقم الجوال',
+              prefixIcon: const Icon(Icons.phone),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -145,10 +160,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'يرجى إدخال البريد الإلكتروني';
+                return 'يرجى إدخال رقم الجوال';
               }
-              if (!value.contains('@')) {
-                return 'البريد الإلكتروني غير صالح';
+              if (!value.startsWith('+')) {
+                return 'يجب أن يبدأ برمز الدولة (+966)';
               }
               return null;
             },
@@ -228,63 +243,93 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
             ],
           ),
+          if (_showOtpField) ..[
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'رمز التحقق',
+                prefixIcon: const Icon(Icons.sms),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'يرجى إدخال رمز التحقق';
+                }
+                return null;
+              },
+            ),
+          ],
           const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _handleLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(AppIcons.login, size: 22),
-                SizedBox(width: 12),
-                Text(
-                  'تسجيل الدخول',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: Divider(color: Colors.grey.shade300)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'أو',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ),
-              Expanded(child: Divider(color: Colors.grey.shade300)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: _handleGoogleLogin,
-            icon: const Icon(
-              Icons.g_mobiledata,
-              size: 28,
-              color: AppColors.primary,
-            ),
-            label: const Text(
-              'تسجيل الدخول بواسطة Google',
-              style: TextStyle(fontSize: 16),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: Colors.grey.shade300),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
+          BlocBuilder<AdminCubit, AdminState>(
+            builder: (context, state) {
+              final loading = state is AdminLoading;
+              if (!_showOtpField) {
+                return ElevatedButton(
+                  onPressed: loading ? null : _handlePhoneVerification,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.phone, size: 22),
+                      const SizedBox(width: 12),
+                      Text(
+                        loading ? 'جاري إرسال رمز التحقق...' : 'إرسال رمز التحقق',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                return ElevatedButton(
+                  onPressed: loading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(AppIcons.login, size: 22),
+                      const SizedBox(width: 12),
+                      Text(
+                        loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
           ),
           const SizedBox(height: 16),
           TextButton(
@@ -299,19 +344,37 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     );
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handlePhoneVerification() async {
     try {
       if (!_formKey.currentState!.validate()) {
         return;
       }
 
-      final email = _emailController.text.trim();
+      final phoneNumber = _phoneController.text.trim();
+
+      debugPrint('[AdminLoginScreen] Attempting phone verification for: $phoneNumber');
+      await context.read<AdminCubit>().verifyPhoneNumber(phoneNumber);
+    } catch (e, stackTrace) {
+      debugPrint('[AdminLoginScreen] _handlePhoneVerification error: $e');
+      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
+    }
+  }
+
+  Future<void> _handleLogin() async {
+    try {
+      if (!_formKey.currentState!.validate() || _verificationId == null) {
+        return;
+      }
+
+      final phoneNumber = _phoneController.text.trim();
       final password = _passwordController.text;
 
-      debugPrint('[AdminLoginScreen] Attempting login for: $email');
-      await context.read<AdminCubit>().login(
-        email,
+      debugPrint('[AdminLoginScreen] Attempting login for: $phoneNumber');
+      await context.read<AdminCubit>().loginWithPhone(
+        phoneNumber,
         password,
+        _verificationId!,
+        _otpController.text,
         rememberMe: _rememberMe,
       );
     } catch (e, stackTrace) {
@@ -320,13 +383,4 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
-    try {
-      debugPrint('[AdminLoginScreen] Attempting Google login');
-      await context.read<AdminCubit>().loginWithGoogle();
-    } catch (e, stackTrace) {
-      debugPrint('[AdminLoginScreen] _handleGoogleLogin error: $e');
-      debugPrint('[AdminLoginScreen] stackTrace: $stackTrace');
-    }
-  }
 }

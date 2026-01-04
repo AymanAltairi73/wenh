@@ -70,70 +70,108 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Login with email and password
-  Future<void> login(
-    String email,
-    String password, {
+  /// Verify phone number and send OTP
+  Future<void> verifyPhoneNumber(String phoneNumber) async {
+    emit(const AuthLoading());
+    try {
+      await _authService.verifyPhoneNumber(
+        phoneNumber,
+        (verificationId) {
+          emit(OtpSent(verificationId));
+        },
+        (error) {
+          emit(AuthError(_handleAuthException(error)));
+          emit(const AuthInitial());
+        },
+      );
+    } catch (e) {
+      debugPrint('[AuthCubit] verifyPhoneNumber error: $e');
+      emit(AuthError(e.toString()));
+      emit(const AuthInitial());
+    }
+  }
+
+  /// Login with phone number, password, and OTP
+  Future<void> loginWithPhone(
+    String phoneNumber,
+    String password,
+    String verificationId,
+    String smsCode, {
     bool rememberMe = false,
-    String userType = 'worker',
   }) async {
     emit(const AuthLoading());
     try {
-      final worker = await _authService.loginWorker(email, password);
+      final worker = await _authService.loginWorker(
+        phoneNumber,
+        password,
+        verificationId,
+        smsCode,
+      );
       if (worker != null) {
         current = worker;
 
         // Save Remember Me preference
         await _storageService.setRememberMe(
           value: rememberMe,
-          userType: userType,
-          email: email,
+          userType: 'worker',
+          email: phoneNumber, // Store phone number instead of email
         );
 
         emit(Authenticated(worker));
       }
     } catch (e, stackTrace) {
-      debugPrint('[AuthCubit] login error: $e');
+      debugPrint('[AuthCubit] loginWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
       emit(const AuthInitial());
     }
   }
 
-  Future<void> loginWithGoogle() async {
-    emit(const AuthLoading());
-    try {
-      final worker = await _authService.loginWorkerWithGoogle();
-      if (worker != null) {
-        current = worker;
-        emit(Authenticated(worker));
-      }
-    } catch (e, stackTrace) {
-      debugPrint('[AuthCubit] loginWithGoogle error: $e');
-      debugPrint('[AuthCubit] stackTrace: $stackTrace');
-      emit(AuthError(e.toString()));
-      emit(const AuthInitial());
-    }
-  }
 
-  Future<void> register({
-    required String email,
+  /// Register worker with phone number and password
+  Future<void> registerWithPhone({
+    required String phoneNumber,
     required String password,
     required String name,
+    required String verificationId,
+    required String smsCode,
   }) async {
     emit(const AuthLoading());
     try {
       await _authService.registerWorker(
-        email: email,
+        phoneNumber: phoneNumber,
         password: password,
         name: name,
+        verificationId: verificationId,
+        smsCode: smsCode,
       );
-      await login(email, password);
+      // Auto-login after registration
+      await loginWithPhone(phoneNumber, password, verificationId, smsCode);
     } catch (e, stackTrace) {
-      debugPrint('[AuthCubit] register error: $e');
+      debugPrint('[AuthCubit] registerWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');
       emit(AuthError(e.toString()));
       emit(const AuthInitial());
+    }
+  }
+
+  /// Handle Firebase Auth exceptions
+  String _handleAuthException(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return 'رقم الجوال غير صالح';
+      case 'user-disabled':
+        return 'هذا الحساب معطل';
+      case 'user-not-found':
+        return 'رقم الجوال غير مسجل';
+      case 'session-expired':
+        return 'انتهت جلسة رمز التحقق، يرجى إعادة المحاولة';
+      case 'quota-exceeded':
+        return 'تم تجاوز عدد محاولات التحقق، يرجى المحاولة لاحقاً';
+      case 'network-request-failed':
+        return 'تحقق من اتصال الإنترنت';
+      default:
+        return 'حدث خطأ: ${e.message}';
     }
   }
 

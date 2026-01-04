@@ -6,6 +6,12 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
+    // Helper function to check if user owns the document by phone number
+    function isOwnerByPhone(phoneField) {
+      return request.auth != null && 
+             request.auth.token.phone_number == resource.data[phoneField];
+    }
+    
     // Any authenticated user can read/write their own documents
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -18,11 +24,15 @@ service cloud.firestore {
         isAdmin()
       );
       allow write: if request.auth != null && request.auth.uid == workerId;
+      // Allow creation during phone authentication
+      allow create: if request.auth != null && request.auth.uid == resource.data.uid;
     }
     
     // Any authenticated user can read/write their own admin document
     match /admins/{adminId} {
       allow read, write: if request.auth != null && request.auth.uid == adminId;
+      // Allow creation during phone authentication
+      allow create: if request.auth != null && request.auth.uid == resource.data.uid;
     }
     
     // Any authenticated user can read/write any request
@@ -43,6 +53,11 @@ service cloud.firestore {
     // Any authenticated user can read/write their own notifications
     match /notifications/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Deny all access to unauthenticated users
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -14,29 +14,48 @@ class WorkerLoginScreen extends StatefulWidget {
 
 class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _otpController = TextEditingController();
   bool _obscure = true;
   bool _rememberMe = true;
+  bool _showOtpField = false;
+  String? _verificationId;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
+  }
+
+  void _verifyPhone() {
+    try {
+      if ((_formKey.currentState?.validate() ?? false)) {
+        debugPrint(
+          '[WorkerLoginScreen] Attempting phone verification for: ${_phoneController.text.trim()}',
+        );
+        context.read<AuthCubit>().verifyPhoneNumber(_phoneController.text.trim());
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[WorkerLoginScreen] _verifyPhone error: $e');
+      debugPrint('[WorkerLoginScreen] stackTrace: $stackTrace');
+    }
   }
 
   void _login() {
     try {
-      if ((_formKey.currentState?.validate() ?? false)) {
+      if ((_formKey.currentState?.validate() ?? false) && _verificationId != null) {
         debugPrint(
-          '[WorkerLoginScreen] Attempting login for: ${_emailController.text.trim()}',
+          '[WorkerLoginScreen] Attempting login for: ${_phoneController.text.trim()}',
         );
-        context.read<AuthCubit>().login(
-          _emailController.text.trim(),
+        context.read<AuthCubit>().loginWithPhone(
+          _phoneController.text.trim(),
           _passwordController.text,
+          _verificationId!,
+          _otpController.text,
           rememberMe: _rememberMe,
-          userType: 'worker',
         );
       }
     } catch (e, stackTrace) {
@@ -45,15 +64,6 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
     }
   }
 
-  void _loginWithGoogle() {
-    try {
-      debugPrint('[WorkerLoginScreen] Attempting Google login');
-      context.read<AuthCubit>().loginWithGoogle();
-    } catch (e, stackTrace) {
-      debugPrint('[WorkerLoginScreen] _loginWithGoogle error: $e');
-      debugPrint('[WorkerLoginScreen] stackTrace: $stackTrace');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +79,14 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text(state.message)));
+            } else if (state is OtpSent) {
+              setState(() {
+                _verificationId = state.verificationId;
+                _showOtpField = true;
+              });
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('تم إرسال رمز التحقق')));
             }
           },
           child: Center(
@@ -134,15 +152,21 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                           ),
                           const SizedBox(height: 20),
                           TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
-                              labelText: 'البريد الإلكتروني',
-                              prefixIcon: Icon(Icons.email),
+                              labelText: 'رقم الجوال',
+                              prefixIcon: Icon(Icons.phone),
                             ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'مطلوب'
-                                : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'مطلوب';
+                              }
+                              if (!v.startsWith('+')) {
+                                return 'يجب أن يبدأ برمز الدولة (+966)';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
@@ -194,68 +218,40 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                               ),
                             ],
                           ),
+                          if (_showOtpField) ..[
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _otpController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'رمز التحقق',
+                                prefixIcon: Icon(Icons.sms),
+                              ),
+                              validator: (v) =>
+                                  (v == null || v.isEmpty) ? 'مطلوب' : null,
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           BlocBuilder<AuthCubit, AuthState>(
                             builder: (context, state) {
                               final loading = state is AuthLoading;
-                              return CustomButton(
-                                label: loading
-                                    ? 'جاري تسجيل الدخول...'
-                                    : 'تسجيل الدخول',
-                                onPressed: loading ? null : _login,
-                                icon: Icons.login,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Divider(color: Colors.grey.shade400),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Text(
-                                  'أو',
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(color: Colors.grey.shade400),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          BlocBuilder<AuthCubit, AuthState>(
-                            builder: (context, state) {
-                              final loading = state is AuthLoading;
-                              return OutlinedButton.icon(
-                                onPressed: loading ? null : _loginWithGoogle,
-                                icon: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.vibrantGradient,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.workspaces_outline,
-                                    size: 20,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                label: const Text('تسجيل الدخول بواسطة Google'),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  side: BorderSide(color: Colors.grey.shade300),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              );
+                              if (!_showOtpField) {
+                                return CustomButton(
+                                  label: loading
+                                      ? 'جاري إرسال رمز التحقق...'
+                                      : 'إرسال رمز التحقق',
+                                  onPressed: loading ? null : _verifyPhone,
+                                  icon: Icons.phone,
+                                );
+                              } else {
+                                return CustomButton(
+                                  label: loading
+                                      ? 'جاري تسجيل الدخول...'
+                                      : 'تسجيل الدخول',
+                                  onPressed: loading ? null : _login,
+                                  icon: Icons.login,
+                                );
+                              }
                             },
                           ),
                           const SizedBox(height: 12),
