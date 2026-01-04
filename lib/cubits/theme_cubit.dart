@@ -77,6 +77,7 @@ class ThemeCubit extends Cubit<ThemeState> {
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
 
         cardTheme: CardThemeData(
@@ -93,8 +94,8 @@ class ThemeCubit extends Cubit<ThemeState> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            elevation: 6,
-            shadowColor: AppColors.primary.withOpacity(0.25),
+            elevation: 8,
+            shadowColor: AppColors.primary.withOpacity(0.3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -103,6 +104,37 @@ class ThemeCubit extends Cubit<ThemeState> {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
+            ),
+          ),
+        ),
+
+        // Add secondary button style
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.secondary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        // Add outlined button style
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primary, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -121,11 +153,11 @@ class ThemeCubit extends Cubit<ThemeState> {
           fillColor: AppColors.surfaceVariant,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.2)),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.3)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.2)),
+            borderSide: BorderSide(color: AppColors.divider.withOpacity(0.3)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -148,6 +180,8 @@ class ThemeCubit extends Cubit<ThemeState> {
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
+          prefixIconColor: AppColors.primary,
+          suffixIconColor: AppColors.secondary,
         ),
 
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -259,12 +293,13 @@ class ThemeCubit extends Cubit<ThemeState> {
           centerTitle: true,
           backgroundColor: AppColors.surfaceDark,
           foregroundColor: AppColors.textPrimaryDark,
-          iconTheme: IconThemeData(color: AppColors.accentLight),
+          iconTheme: IconThemeData(color: AppColors.primaryLight),
           titleTextStyle: TextStyle(
             color: AppColors.textPrimaryDark,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
+          systemOverlayStyle: SystemUiOverlayStyle.light,
         ),
 
         cardTheme: CardThemeData(
@@ -281,8 +316,8 @@ class ThemeCubit extends Cubit<ThemeState> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryLight,
             foregroundColor: Colors.white,
-            elevation: 8,
-            shadowColor: AppColors.primaryLight.withOpacity(0.3),
+            elevation: 10,
+            shadowColor: AppColors.primaryLight.withOpacity(0.4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -291,6 +326,37 @@ class ThemeCubit extends Cubit<ThemeState> {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.3,
+            ),
+          ),
+        ),
+
+        // Add secondary button style for dark theme
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.secondaryLight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        // Add outlined button style for dark theme
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primaryLight,
+            side: const BorderSide(color: AppColors.primaryLight, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -310,19 +376,19 @@ class ThemeCubit extends Cubit<ThemeState> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: AppColors.dividerDark.withOpacity(0.3),
+              color: AppColors.dividerDark.withOpacity(0.4),
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: AppColors.dividerDark.withOpacity(0.3),
+              color: AppColors.dividerDark.withOpacity(0.4),
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
-              color: AppColors.accentLight,
+              color: AppColors.primaryLight,
               width: 2,
             ),
           ),
@@ -348,11 +414,13 @@ class ThemeCubit extends Cubit<ThemeState> {
             color: AppColors.textSecondaryDark,
             fontWeight: FontWeight.w600,
           ),
+          prefixIconColor: AppColors.primaryLight,
+          suffixIconColor: AppColors.secondaryLight,
         ),
 
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.surfaceDark,
-          selectedItemColor: AppColors.accentLight,
+          selectedItemColor: AppColors.primaryLight,
           unselectedItemColor: AppColors.textTertiaryDark,
           type: BottomNavigationBarType.fixed,
           elevation: 8,
@@ -425,7 +493,7 @@ class ThemeCubit extends Cubit<ThemeState> {
           ),
         ),
 
-        iconTheme: const IconThemeData(color: AppColors.accentLight),
+        iconTheme: const IconThemeData(color: AppColors.primaryLight),
         dividerColor: AppColors.dividerDark,
         dividerTheme: const DividerThemeData(
           color: AppColors.dividerDark,

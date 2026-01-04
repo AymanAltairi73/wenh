@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// Modern Professional Color Palette - Vibrant & Attractive
+/// Logo-Based Color Palette - Blue & Orange Professional Theme
 class AppColors {
-  // Primary - Modern Teal/Turquoise
-  static const Color primary = Color(0xFF00BFA5);
-  static const Color primaryDark = Color(0xFF00897B);
-  static const Color primaryLight = Color(0xFF26C6DA);
-  static const Color primaryLighter = Color(0xFF4DD0E1);
+  // Primary - Deep Blue (from logo background)
+  static const Color primary = Color(0xFF1E3A8A);
+  static const Color primaryDark = Color(0xFF1E40AF);
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color primaryLighter = Color(0xFF60A5FA);
 
-  // Secondary - Deep Orange/Coral
-  static const Color secondary = Color(0xFFFF6B35);
-  static const Color secondaryDark = Color(0xFFE55100);
-  static const Color secondaryLight = Color(0xFFFF8A65);
-  static const Color secondaryLighter = Color(0xFFFFAB91);
+  // Secondary - Orange/Amber (from logo border)
+  static const Color secondary = Color(0xFFF97316);
+  static const Color secondaryDark = Color(0xFFEA580C);
+  static const Color secondaryLight = Color(0xFFFB923C);
+  static const Color secondaryLighter = Color(0xFFFED7AA);
 
-  // Accent - Purple/Violet
-  static const Color accent = Color(0xFF8B5CF6);
-  static const Color accentDark = Color(0xFF7C3AED);
-  static const Color accentLight = Color(0xFFA78BFA);
-  static const Color accentLighter = Color(0xFFC4B5FD);
+  // Accent - Light Blue (from logo inner background)
+  static const Color accent = Color(0xFFDBEAFE);
+  static const Color accentDark = Color(0xFF93C5FD);
+  static const Color accentLight = Color(0xFFEFF6FF);
+  static const Color accentLighter = Color(0xFFFFFFFF);
 
-  // Status Colors - Enhanced
+  // Status Colors - Enhanced with theme consistency
   static const Color success = Color(0xFF10B981);
   static const Color successLight = Color(0xFF34D399);
   static const Color successDark = Color(0xFF059669);
@@ -37,30 +37,30 @@ class AppColors {
   static const Color infoLight = Color(0xFF60A5FA);
   static const Color infoDark = Color(0xFF2563EB);
 
-  // Light Mode Backgrounds - Modern Clean
-  static const Color background = Color(0xFFFAFAFA);
+  // Light Mode Backgrounds - Clean & Professional
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF5F5F5);
+  static const Color surfaceVariant = Color(0xFFF1F5F9);
 
-  // Dark Mode Backgrounds - Deep Rich
+  // Dark Mode Backgrounds - Deep Blue Theme
   static const Color backgroundDark = Color(0xFF0F172A);
   static const Color surfaceDark = Color(0xFF1E293B);
   static const Color cardDark = Color(0xFF334155);
   static const Color surfaceVariantDark = Color(0xFF475569);
 
   // Text Colors - Light Mode - Enhanced Contrast
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textDisabled = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textDisabled = Color(0xFF94A3B8);
 
   // Text Colors - Dark Mode - Better Readability
-  static const Color textPrimaryDark = Color(0xFFF9FAFB);
-  static const Color textSecondaryDark = Color(0xFFD1D5DB);
-  static const Color textTertiaryDark = Color(0xFF9CA3AF);
+  static const Color textPrimaryDark = Color(0xFFF8FAFC);
+  static const Color textSecondaryDark = Color(0xFFCBD5E1);
+  static const Color textTertiaryDark = Color(0xFF94A3B8);
 
   // Dividers - Modern
-  static const Color divider = Color(0xFFE5E7EB);
-  static const Color dividerDark = Color(0xFF374151);
+  static const Color divider = Color(0xFFE2E8F0);
+  static const Color dividerDark = Color(0xFF334155);
 
   // Glassmorphism - Enhanced
   static const Color glassLight = Color(0x60FFFFFF);
@@ -70,16 +70,16 @@ class AppColors {
   static const Color glassBorderDark = Color(0x20FFFFFF);
 
   // Shimmer Colors - Modern
-  static const Color shimmerBaseLight = Color(0xFFF3F4F6);
+  static const Color shimmerBaseLight = Color(0xFFF1F5F9);
   static const Color shimmerHighlightLight = Color(0xFFFFFFFF);
-  static const Color shimmerBaseDark = Color(0xFF374151);
-  static const Color shimmerHighlightDark = Color(0xFF4B5563);
+  static const Color shimmerBaseDark = Color(0xFF334155);
+  static const Color shimmerHighlightDark = Color(0xFF475569);
 
   // Shadows - Professional
   static const Color cardShadow = Color(0x0F000000);
   static const Color cardShadowDark = Color(0x40000000);
 
-  // Gradients - Modern & Vibrant
+  // Gradients - Logo-Inspired
   static LinearGradient primaryGradient = const LinearGradient(
     colors: [primary, primaryLight],
     begin: Alignment.topLeft,
@@ -99,14 +99,20 @@ class AppColors {
   );
 
   static LinearGradient vibrantGradient = const LinearGradient(
-    colors: [primary, secondary, accent],
+    colors: [primary, secondary, primaryLight],
     stops: [0.0, 0.5, 1.0],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  static LinearGradient logoGradient = const LinearGradient(
+    colors: [Color(0xFF1E3A8A), Color(0xFFF97316)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static LinearGradient backgroundGradient = const LinearGradient(
-    colors: [Color(0xFFFAFAFA), Color(0xFFF3F4F6)],
+    colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -118,7 +124,7 @@ class AppColors {
   );
 
   static LinearGradient darkPrimaryGradient = const LinearGradient(
-    colors: [primaryLight, accentLight],
+    colors: [primaryLight, secondaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
