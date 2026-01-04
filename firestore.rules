@@ -1,63 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is admin
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-    
-    // Helper function to check if user owns the document by phone number
-    function isOwnerByPhone(phoneField) {
-      return request.auth != null && 
-             request.auth.token.phone_number == resource.data[phoneField];
-    }
-    
-    // Any authenticated user can read/write their own documents
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Admins can read all workers, workers can read/write their own
-    match /workers/{workerId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == workerId || 
-        isAdmin()
-      );
-      allow write: if request.auth != null && request.auth.uid == workerId;
-      // Allow creation during phone authentication
-      allow create: if request.auth != null && request.auth.uid == resource.data.uid;
-    }
-    
-    // Any authenticated user can read/write their own admin document
-    match /admins/{adminId} {
-      allow read, write: if request.auth != null && request.auth.uid == adminId;
-      // Allow creation during phone authentication
-      allow create: if request.auth != null && request.auth.uid == resource.data.uid;
-    }
-    
-    // Any authenticated user can read/write any request
-    match /requests/{requestId} {
-      allow read, create, update, delete: if request.auth != null;
-    }
-    
-    // Any authenticated user can list requests
-    match /requests {
-      allow list: if request.auth != null;
-    }
-    
-    // Any authenticated user can read/write their own favorites
-    match /favorites/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Any authenticated user can read/write their own notifications
-    match /notifications/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Deny all access to unauthenticated users
+    // TEMPORARY: Allow all access for testing
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
