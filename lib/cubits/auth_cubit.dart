@@ -112,10 +112,16 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(const AuthLoading());
     try {
+      // Ensure no existing session conflicts
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+
       final worker = await _authService.loginWorker(
         phoneNumber,
         password,
       );
+      
       if (worker != null) {
         current = worker;
 
@@ -126,7 +132,7 @@ class AuthCubit extends Cubit<AuthState> {
           email: phoneNumber, // Store phone number instead of email
         );
 
-        // Show success message
+        // Show success message after successful authentication
         _showLoginSuccess(context, 'worker');
 
         emit(Authenticated(worker));
@@ -136,6 +142,7 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       debugPrint('[AuthCubit] loginWithPhone error: $e');
       emit(AuthError(e.toString()));
+      emit(const AuthInitial());
     }
   }
 
@@ -148,14 +155,23 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(const AuthLoading());
     try {
+      // Ensure no existing session conflicts
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+
       await _authService.registerWorker(
         phoneNumber: phoneNumber,
         password: password,
         name: name,
       );
+      
       // Auto-login after registration
       await loginWithPhone(phoneNumber, password, context: context);
+      
+      // Show registration success message
       _showRegistrationSuccess(context);
+      
     } catch (e, stackTrace) {
       debugPrint('[AuthCubit] registerWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');

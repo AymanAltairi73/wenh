@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/request_model.dart';
 import '../models/worker_model.dart';
 
@@ -15,6 +16,11 @@ class FirestoreService {
     int limit = 50,
   }) {
     try {
+      // Ensure user is authenticated
+      if (_auth.currentUser == null) {
+        throw Exception('يجب تسجيل الدخول لجلب الطلبات');
+      }
+
       Query query = _firestore.collection('requests');
 
       if (status != null) {
@@ -28,9 +34,23 @@ class FirestoreService {
       query = query.orderBy('createdAt', descending: true).limit(limit);
 
       return query.snapshots().map((snapshot) {
-        return snapshot.docs
-            .map((doc) => RequestModel.fromFirestore(doc))
-            .toList();
+        // Handle empty result gracefully
+        if (snapshot.docs.isEmpty) {
+          return <RequestModel>[];
+        }
+        
+        final requests = <RequestModel>[];
+        for (final doc in snapshot.docs) {
+          try {
+            requests.add(RequestModel.fromFirestore(doc));
+          } catch (e) {
+            debugPrint('[FirestoreService] Error parsing request: $e');
+            // Skip invalid documents but continue processing others
+          }
+        }
+        return requests;
+      }).handleError((error) {
+        throw _handleFirestoreError(error);
       });
     } catch (e) {
       throw _handleFirestoreError(e);
@@ -72,11 +92,25 @@ class FirestoreService {
 
   Future<String> createRequest(RequestModel request) async {
     try {
+      // Ensure user is authenticated
+      if (_auth.currentUser == null) {
+        throw Exception('يجب تسجيل الدخول لإنشاء طلب');
+      }
+
+      // Create request with additional security fields
+      final requestData = request.toFirestore();
+      requestData['createdBy'] = _auth.currentUser!.uid;
+      requestData['createdAt'] = FieldValue.serverTimestamp();
+      requestData['status'] = 'new';
+
       final docRef = await _firestore
           .collection('requests')
-          .add(request.toFirestore());
+          .add(requestData);
+      
+      debugPrint('[FirestoreService] Request created successfully: ${docRef.id}');
       return docRef.id;
     } catch (e) {
+      debugPrint('[FirestoreService] Error creating request: $e');
       throw _handleFirestoreError(e);
     }
   }

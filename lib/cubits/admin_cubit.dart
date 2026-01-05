@@ -52,10 +52,16 @@ class AdminCubit extends Cubit<AdminState> {
   }) async {
     emit(const AdminLoading());
     try {
+      // Ensure no existing session conflicts
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+
       final admin = await _authService.loginAdmin(
         phoneNumber,
         password,
       );
+      
       if (admin != null && admin.isActive) {
         currentAdmin = admin;
 
@@ -73,6 +79,7 @@ class AdminCubit extends Cubit<AdminState> {
     } catch (e) {
       debugPrint('[AdminCubit] loginWithPhone error: $e');
       emit(AdminError(e.toString()));
+      emit(const AdminInitial());
     }
   }
 
@@ -84,13 +91,20 @@ class AdminCubit extends Cubit<AdminState> {
   }) async {
     emit(const AdminLoading());
     try {
+      // Ensure no existing session conflicts
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+
       await _authService.registerAdmin(
         phoneNumber: phoneNumber,
         password: password,
         name: name,
       );
+      
       // Auto-login after registration
       await loginWithPhone(phoneNumber, password);
+      
     } catch (e, stackTrace) {
       debugPrint('[AdminCubit] registerWithPhone error: $e');
       debugPrint('[AdminCubit] stackTrace: $stackTrace');
