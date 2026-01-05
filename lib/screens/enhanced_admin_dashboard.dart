@@ -31,20 +31,32 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Check if admin is authenticated before fetching requests
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final adminState = context.read<AdminCubit>().state;
       if (adminState is AdminAuthenticated) {
         try {
-          debugPrint('[EnhancedAdminDashboard] Admin authenticated, fetching requests');
-          context.read<RequestCubit>().getRequests();
+          debugPrint(
+            '[EnhancedAdminDashboard] Admin authenticated, fetching requests',
+          );
+
+          // Ensure FirestoreService has the user ID
+          final admin = adminState.admin;
+          final requestCubit = context.read<RequestCubit>();
+          if (requestCubit.firestoreService.currentUserId == null) {
+            requestCubit.firestoreService.setCurrentUserId(admin.id);
+          }
+
+          requestCubit.getRequests();
         } catch (e, stackTrace) {
           debugPrint('[EnhancedAdminDashboard] getRequests error: $e');
           debugPrint('[EnhancedAdminDashboard] stackTrace: $stackTrace');
         }
       } else {
-        debugPrint('[EnhancedAdminDashboard] Admin not authenticated, redirecting to login');
+        debugPrint(
+          '[EnhancedAdminDashboard] Admin not authenticated, redirecting to login',
+        );
         Navigator.pushReplacementNamed(context, '/admin-login');
       }
     });
@@ -69,33 +81,33 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
         }
       },
       child: Scaffold(
-      body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildAppBar(context),
-              _buildTabBar(),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildRequestsTab(),
-                    _buildWorkersTab(),
-                    _buildRevenueTab(),
-                  ],
+        body: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(context),
+                _buildTabBar(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildRequestsTab(),
+                      _buildWorkersTab(),
+                      _buildRevenueTab(),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/admin-management'),
-        icon: const Icon(AppIcons.admin),
-        label: const Text('إدارة المديرين'),
-        backgroundColor: AppColors.primary,
-      ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => Navigator.pushNamed(context, '/admin-management'),
+          icon: const Icon(AppIcons.admin),
+          label: const Text('إدارة المديرين'),
+          backgroundColor: AppColors.primary,
+        ),
       ),
     );
   }
@@ -153,26 +165,16 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
                   'خطأ في تحميل بيانات العمال',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${snapshot.error}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -196,11 +198,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  AppIcons.workers,
-                  size: 80,
-                  color: AppColors.textDisabled,
-                ),
+                Icon(AppIcons.workers, size: 80, color: AppColors.textDisabled),
                 const SizedBox(height: 16),
                 Text(
                   'لا يوجد عمال مسجلين',
@@ -213,10 +211,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                 const SizedBox(height: 8),
                 Text(
                   'سيظهر العمال هنا عند تسجيلهم في النظام',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textDisabled,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textDisabled),
                 ),
               ],
             ),
@@ -286,43 +281,36 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
 
   Widget _buildRevenueTab() {
     return BlocProvider(
-      create: (context) => AdminStatsCubit()..fetchStats(),
+      create: (context) => AdminStatsCubit(
+        firestoreService: context.read<RequestCubit>().firestoreService,
+      )..fetchStats(),
       child: BlocBuilder<AdminStatsCubit, AdminStatsState>(
         builder: (context, state) {
           if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (state.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Colors.red,
-                  ),
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
                     'خطأ في تحميل الإحصائيات',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     state.error!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => context.read<AdminStatsCubit>().refreshStats(),
+                    onPressed: () =>
+                        context.read<AdminStatsCubit>().refreshStats(),
                     child: const Text('إعادة المحاولة'),
                   ),
                 ],
@@ -341,12 +329,13 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                   // Revenue Overview
                   StatCard(
                     title: 'إجمالي الأرباح',
-                    value: '${state.revenueData.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)} د.ع',
+                    value:
+                        '${state.revenueData.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)} د.ع',
                     icon: Icons.monetization_on,
                     color: Colors.green,
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Worker Stats
                   Row(
                     children: [
@@ -366,7 +355,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Request Stats
                   Row(
                     children: [
@@ -386,7 +375,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Revenue Chart
                   if (state.revenueData.isNotEmpty) ...[
                     RevenueChart(
@@ -396,7 +385,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                     ),
                     const SizedBox(height: 24),
                   ],
-                  
+
                   // Subscription Stats
                   if (state.subscriptionData.isNotEmpty) ...[
                     SubscriptionStatsChart(
@@ -404,7 +393,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                     ),
                     const SizedBox(height: 24),
                   ],
-                  
+
                   // Detailed Stats
                   Container(
                     margin: const EdgeInsets.all(16),

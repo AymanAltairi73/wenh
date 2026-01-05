@@ -7,6 +7,7 @@ import 'request_state.dart';
 
 class RequestCubit extends Cubit<RequestState> {
   final FirestoreService _firestoreService;
+  FirestoreService get firestoreService => _firestoreService;
   StreamSubscription? _requestsSubscription;
 
   RequestCubit({FirestoreService? firestoreService})

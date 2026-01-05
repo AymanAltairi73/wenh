@@ -38,7 +38,13 @@ class AdminStatsState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isLoading, stats, revenueData, subscriptionData, error];
+  List<Object?> get props => [
+    isLoading,
+    stats,
+    revenueData,
+    subscriptionData,
+    error,
+  ];
 }
 
 class AdminStatsCubit extends Cubit<AdminStatsState> {
@@ -46,9 +52,9 @@ class AdminStatsCubit extends Cubit<AdminStatsState> {
   StreamSubscription? _requestsSubscription;
   StreamSubscription? _workersSubscription;
 
-  AdminStatsCubit({FirestoreService? firestoreService})
-      : _firestoreService = firestoreService ?? FirestoreService(),
-        super(const AdminStatsState());
+  AdminStatsCubit({required FirestoreService firestoreService})
+    : _firestoreService = firestoreService,
+      super(const AdminStatsState());
 
   @override
   Future<void> close() {
@@ -69,10 +75,12 @@ class AdminStatsCubit extends Cubit<AdminStatsState> {
         },
         onError: (error) {
           debugPrint('[AdminStatsCubit] Requests stream error: $error');
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'فشل في تحميل إحصائيات الطلبات',
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: 'فشل في تحميل إحصائيات الطلبات',
+            ),
+          );
         },
       );
 
@@ -84,40 +92,48 @@ class AdminStatsCubit extends Cubit<AdminStatsState> {
         },
         onError: (error) {
           debugPrint('[AdminStatsCubit] Workers stream error: $error');
-          emit(state.copyWith(
-            isLoading: false,
-            error: 'فشل في تحميل إحصائيات العمال',
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              error: 'فشل في تحميل إحصائيات العمال',
+            ),
+          );
         },
       );
-
     } catch (e) {
       debugPrint('[AdminStatsCubit] fetchStats error: $e');
-      emit(state.copyWith(
-        isLoading: false,
-        error: 'فشل في تحميل الإحصائيات',
-      ));
+      emit(state.copyWith(isLoading: false, error: 'فشل في تحميل الإحصائيات'));
     }
   }
 
   void _updateStats(List<RequestModel>? requests, List<WorkerModel>? workers) {
     final currentStats = Map<String, dynamic>.from(state.stats);
     final currentRevenueData = Map<String, double>.from(state.revenueData);
-    final currentSubscriptionData = Map<String, int>.from(state.subscriptionData);
+    final currentSubscriptionData = Map<String, int>.from(
+      state.subscriptionData,
+    );
 
     // Update request stats
     if (requests != null) {
       currentStats['totalRequests'] = requests.length;
-      currentStats['newRequests'] = requests.where((r) => r.status == 'new').length;
-      currentStats['takenRequests'] = requests.where((r) => r.status == 'taken').length;
-      currentStats['completedRequests'] = requests.where((r) => r.status == 'completed').length;
+      currentStats['newRequests'] = requests
+          .where((r) => r.status == 'new')
+          .length;
+      currentStats['takenRequests'] = requests
+          .where((r) => r.status == 'taken')
+          .length;
+      currentStats['completedRequests'] = requests
+          .where((r) => r.status == 'completed')
+          .length;
 
       // Calculate revenue data (monthly)
       final monthlyRevenue = <String, double>{};
       for (final request in requests) {
         if (request.status == 'taken' || request.status == 'completed') {
-          final month = '${request.timestamp.year}-${request.timestamp.month.toString().padLeft(2, '0')}';
-          monthlyRevenue[month] = (monthlyRevenue[month] ?? 0) + 50.0; // Assume 50 per request
+          final month =
+              '${request.timestamp.year}-${request.timestamp.month.toString().padLeft(2, '0')}';
+          monthlyRevenue[month] =
+              (monthlyRevenue[month] ?? 0) + 50.0; // Assume 50 per request
         }
       }
       currentRevenueData.clear();
@@ -127,7 +143,9 @@ class AdminStatsCubit extends Cubit<AdminStatsState> {
     // Update worker stats
     if (workers != null) {
       currentStats['totalWorkers'] = workers.length;
-      currentStats['activeWorkers'] = workers.where((w) => w.isSubscriptionActive).length;
+      currentStats['activeWorkers'] = workers
+          .where((w) => w.isSubscriptionActive)
+          .length;
 
       // Calculate subscription data
       final subscriptionCounts = <String, int>{};
@@ -142,25 +160,31 @@ class AdminStatsCubit extends Cubit<AdminStatsState> {
       final monthlySubRevenue = <String, double>{};
       for (final worker in workers) {
         if (worker.isSubscriptionActive) {
-          final month = '${worker.subscriptionStart.year}-${worker.subscriptionStart.month.toString().padLeft(2, '0')}';
-          final amount = worker.subscriptionPlan == 'weekly' ? 50.0 : 150.0; // Weekly: 50, Monthly: 150
+          final month =
+              '${worker.subscriptionStart.year}-${worker.subscriptionStart.month.toString().padLeft(2, '0')}';
+          final amount = worker.subscriptionPlan == 'weekly'
+              ? 50.0
+              : 150.0; // Weekly: 50, Monthly: 150
           monthlySubRevenue[month] = (monthlySubRevenue[month] ?? 0) + amount;
         }
       }
 
       // Merge with existing revenue data
       for (final entry in monthlySubRevenue.entries) {
-        currentRevenueData[entry.key] = (currentRevenueData[entry.key] ?? 0) + entry.value;
+        currentRevenueData[entry.key] =
+            (currentRevenueData[entry.key] ?? 0) + entry.value;
       }
     }
 
-    emit(state.copyWith(
-      isLoading: false,
-      stats: currentStats,
-      revenueData: currentRevenueData,
-      subscriptionData: currentSubscriptionData,
-      error: null,
-    ));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        stats: currentStats,
+        revenueData: currentRevenueData,
+        subscriptionData: currentSubscriptionData,
+        error: null,
+      ),
+    );
   }
 
   void refreshStats() {

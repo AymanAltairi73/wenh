@@ -15,8 +15,8 @@ class RevenueChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxRevenue = revenueData.values.isNotEmpty 
-        ? revenueData.values.reduce((a, b) => a > b ? a : b) 
+    final maxRevenue = revenueData.values.isNotEmpty
+        ? revenueData.values.reduce((a, b) => a > b ? a : b)
         : 1.0;
 
     return Container(
@@ -57,7 +57,9 @@ class RevenueChart extends StatelessWidget {
                       final entry = revenueData.entries.elementAt(index);
                       final label = entry.key;
                       final value = entry.value;
-                      final barHeight = maxRevenue > 0 ? (value / maxRevenue * 180).toDouble() : 0.0;
+                      final barHeight = maxRevenue > 0
+                          ? (value / maxRevenue * 140).toDouble()
+                          : 0.0;
 
                       return Container(
                         width: 60,
@@ -110,10 +112,7 @@ class RevenueChart extends StatelessWidget {
 class SubscriptionStatsChart extends StatelessWidget {
   final Map<String, int> subscriptionData;
 
-  const SubscriptionStatsChart({
-    super.key,
-    required this.subscriptionData,
-  });
+  const SubscriptionStatsChart({super.key, required this.subscriptionData});
 
   @override
   Widget build(BuildContext context) {
@@ -144,10 +143,7 @@ class SubscriptionStatsChart extends StatelessWidget {
             const Center(
               child: Text(
                 'لا توجد بيانات اشتراكات',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
             )
           else
@@ -156,11 +152,11 @@ class SubscriptionStatsChart extends StatelessWidget {
                 final label = entry.key;
                 final value = entry.value;
                 final percentage = total > 0 ? (value / total) * 100 : 0;
-                final color = label.contains('أسبوعي') 
-                    ? Colors.blue 
-                    : label.contains('شهري') 
-                        ? Colors.green 
-                        : Colors.orange;
+                final color = label.contains('أسبوعي')
+                    ? Colors.blue
+                    : label.contains('شهري')
+                    ? Colors.green
+                    : Colors.orange;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
