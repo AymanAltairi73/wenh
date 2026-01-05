@@ -73,7 +73,7 @@ class WorkerLoginScreen extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, -10),
                     ),
@@ -154,6 +154,7 @@ class _WorkerLoginFormState extends State<_WorkerLoginForm> {
           '$_selectedCountryCode${_phoneController.text.trim()}',
           _passwordController.text,
           rememberMe: _rememberMe,
+          context: context,
         );
       }
     } catch (e, stackTrace) {

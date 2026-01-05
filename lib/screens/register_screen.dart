@@ -160,6 +160,7 @@ class _RegisterFormState extends State<_RegisterForm> {
           phoneNumber: '$_selectedCountryCode${_phoneController.text.trim()}',
           password: _passwordController.text,
           name: _nameController.text.trim(),
+          context: context,
         );
       }
     } catch (e, stackTrace) {

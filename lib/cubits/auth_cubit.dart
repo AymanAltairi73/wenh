@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:wenh/core/theme/app_colors.dart';
 import '../models/worker_model.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/auth_storage_service.dart';
@@ -52,6 +53,38 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Show success message for login
+  void _showLoginSuccess(BuildContext context, String userType) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          userType == 'worker' 
+            ? 'تم تسجيل الدخول بنجاح'
+            : 'تم تسجيل الدخول بنجاح',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Show success message for registration
+  void _showRegistrationSuccess(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'تم إنشاء الحساب بنجاح',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   /// Update worker subscription
   Future<void> updateSubscription(String planType) async {
     if (current == null) return;
@@ -75,6 +108,7 @@ class AuthCubit extends Cubit<AuthState> {
     String phoneNumber,
     String password, {
     bool rememberMe = false,
+    required BuildContext context,
   }) async {
     emit(const AuthLoading());
     try {
@@ -92,6 +126,9 @@ class AuthCubit extends Cubit<AuthState> {
           email: phoneNumber, // Store phone number instead of email
         );
 
+        // Show success message
+        _showLoginSuccess(context, 'worker');
+
         emit(Authenticated(worker));
       } else {
         emit(const AuthError('فشل تسجيل الدخول'));
@@ -107,6 +144,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String phoneNumber,
     required String password,
     required String name,
+    required BuildContext context,
   }) async {
     emit(const AuthLoading());
     try {
@@ -116,7 +154,8 @@ class AuthCubit extends Cubit<AuthState> {
         name: name,
       );
       // Auto-login after registration
-      await loginWithPhone(phoneNumber, password);
+      await loginWithPhone(phoneNumber, password, context: context);
+      _showRegistrationSuccess(context);
     } catch (e, stackTrace) {
       debugPrint('[AuthCubit] registerWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');
