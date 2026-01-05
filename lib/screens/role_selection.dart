@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:wenh/widgets/animated_role_card.dart';
+
 import 'package:wenh/widgets/theme_toggle.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 
@@ -10,7 +9,7 @@ class RoleSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -32,164 +31,207 @@ class RoleSelectionScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 24),
-                  
-                  // Logo and Title
-                  Center(
-                    child: Column(
-                      children: [
-                        Hero(
-                          tag: 'app_logo',
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.vibrantGradient,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              height: 64,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.handyman,
-                                size: 64,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(duration: 600.ms)
-                            .scale(
-                              begin: const Offset(0.8, 0.8),
-                              end: const Offset(1, 1),
-                              duration: 600.ms,
-                              curve: Curves.easeOutBack,
-                            ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'مرحباً بك في وينه',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                foreground: Paint()
-                                  ..shader = AppColors.vibrantGradient.createShader(
-                                    const Rect.fromLTWH(0, 0, 200, 70),
-                                  ),
-                              ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 200.ms, duration: 600.ms)
-                            .slideY(begin: 0.3, end: 0, duration: 600.ms),
-                        const SizedBox(height: 12),
-                        Text(
-                          'يرجى اختيار نوع المستخدم للمتابعة',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondary,
-                              ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 400.ms, duration: 600.ms)
-                            .slideY(begin: 0.3, end: 0, duration: 600.ms),
-                      ],
-                    ),
+            child: Column(
+              children: [
+                // Header Section
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo Section - Arched Bottom
+                      ClipPath(
+                        clipper: BottomArchClipper(),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Title
+                      Text(
+                        'اختر دورك',
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'اختر الدور المناسب لك',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  
-                  const SizedBox(height: 48),
-                  
-                  // Customer Card
-                  AnimatedRoleCard(
-                    title: 'زبون',
-                    //subtitle: 'أنشئ طلب خدمة بدون الحاجة إلى حساب واحصل على المساعدة من العمال المهرة.',
-                    icon: Icons.person_outline,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primary,
-                        AppColors.primaryLight,
-                      ],
+                ),
+
+                // Role Selection Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.surface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
                     ),
-                    onTap: () => Navigator.pushReplacementNamed(context, '/customer'),
-                    animationDelay: 600,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, -10),
+                      ),
+                    ],
                   ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Worker Card
-                  AnimatedRoleCard(
-                    title: 'عامل',
-                    //subtitle: 'سجّل دخولك للاطلاع على طلبات الزبائن واستلامها وتقديم خدماتك المهنية.',
-                    icon: Icons.build_circle_outlined,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.secondary,
-                        AppColors.secondaryLight,
-                      ],
-                    ),
-                    onTap: () => Navigator.pushNamed(context, '/login'),
-                    animationDelay: 800,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+
+                      // Role Cards
+                      _buildRoleCard(
+                        context,
+                        title: 'الزبون',
+                        icon: Icons.person_outline,
+                        onTap: () => Navigator.pushReplacementNamed(context, '/customer'),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildRoleCard(
+                        context,
+                        title: 'عامل',
+                        icon: Icons.person_outline,
+                        onTap: () => Navigator.pushNamed(context, '/login'),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 20),
+
+                      _buildRoleCard(
+                        context,
+                        title: 'مدير',
+                        icon: Icons.admin_panel_settings_outlined,
+                        onTap: () => Navigator.pushNamed(context, '/admin-login'),
+                        isDark: isDark,
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
                   ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Admin Card
-                  AnimatedRoleCard(
-                    title: 'مدير النظام',
-                    //subtitle: 'سجّل دخولك لإدارة النظام والطلبات والمستخدمين بصلاحيات كاملة.',
-                    icon: Icons.admin_panel_settings_outlined,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.accent,
-                        AppColors.cardDark,
-                      ],
-                    ),
-                    onTap: () => Navigator.pushNamed(context, '/admin-login'),
-                    showBadge: true,
-                    badgeText: 'جديد',
-                    animationDelay: 1000,
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Footer
-                  Center(
-                    child: Text(
-                      'اختر الدور المناسب لك وابدأ رحلتك معنا',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textSecondary,
-                          ),
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: 1200.ms, duration: 600.ms),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildRoleCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+          border: Border.all(
+            color: isDark
+                ? AppColors.dividerDark.withValues(alpha: 0.3)
+                : AppColors.divider.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Icon Container
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Custom clipper for creating a bottom arch shape
+class BottomArchClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Start from top left corner
+    path.moveTo(0, 0);
+
+    // Draw straight line to top right
+    path.lineTo(size.width, 0);
+
+    // Draw straight line to bottom right
+    path.lineTo(size.width, size.height * 0.7);
+
+    // Draw a curve that creates the arch at the bottom
+    path.quadraticBezierTo(
+      size.width / 2, // Control point x (middle of width)
+      size.height * 1.1, // Control point y (extends below to create curve)
+      0, // End point x (left edge)
+      size.height * 0.7, // End point y (same level as right side)
+    );
+
+    // Complete the path
+    path.lineTo(0, 0);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return false;
   }
 }

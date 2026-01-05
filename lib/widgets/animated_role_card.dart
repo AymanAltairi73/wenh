@@ -73,13 +73,13 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                           Colors.white.withOpacity(0.02),
                         ]
                       : [
-                          Colors.white.withOpacity(0.3),
-                          Colors.white.withOpacity(0.1),
+                          Colors.white.withValues(alpha: 0.3),
+                          Colors.white.withValues(alpha: 0.1),
                         ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
               ),
@@ -93,7 +93,7 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(
@@ -107,7 +107,7 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                           )
                           .shimmer(
                             duration: 2000.ms,
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                       if (widget.showBadge && widget.badgeText != null)
                         Container(
@@ -116,7 +116,7 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -156,14 +156,14 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_back,
                         size: 16,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ],
                   ),
