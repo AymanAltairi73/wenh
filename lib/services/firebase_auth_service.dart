@@ -115,25 +115,10 @@ class FirebaseAuthService {
       // We'll use the admin's UID as the session identifier
       final adminUid = adminDoc.id;
 
-      // Ensure Firebase Auth session exists (for Firestore security rules)
-      if (_auth.currentUser == null) {
-        debugPrint('[FirebaseAuthService] Requesting anonymous auth...');
-        try {
-          await _auth.signInAnonymously();
-          debugPrint('[FirebaseAuthService] Anonymous auth successful');
-        } catch (e) {
-          // Continue even if anonymous auth fails (e.g. if disabled in console)
-          // This allows the admin to still log in locally, though some Firestore
-          // writes might fail if rules strictly require request.auth
-          debugPrint(
-            '[FirebaseAuthService] Warning: Anonymous auth failed: $e',
-          );
-        }
-      } else {
-        debugPrint(
-          '[FirebaseAuthService] Already authenticated: ${_auth.currentUser?.uid}',
-        );
-      }
+      // Ensure Firebase Auth session exists for Firestore security rules
+      // We use "Shadow Auth": creating a Firebase User with a synthetic email
+      // based on the phone number. This satisfies valid auth requirements.
+      await _ensureShadowAuth(phoneNumber, password);
 
       // Update last login
       await _firestore.collection('admins').doc(adminUid).update({
@@ -236,6 +221,66 @@ class FirebaseAuthService {
     } catch (e) {
       if (e is Exception) throw e;
       throw Exception('فشل إنشاء الحساب: $e');
+    }
+  }
+
+  /// Helper to ensure a valid Firebase Auth session exists using "Shadow Auth"
+  /// Creates or signs in a user with email: admin_<phone>@wenh.com
+  Future<void> _ensureShadowAuth(String phone, String password) async {
+    // Sanitize phone for email use (remove +, spaces, etc if needed, though usually just appending is fine)
+    // We'll just strip the '+' for the email local part to be safe/clean
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final shadowEmail = 'admin_$cleanPhone@wenh.com';
+
+    if (_auth.currentUser != null) {
+      if (_auth.currentUser!.email == shadowEmail) {
+        debugPrint(
+          '[FirebaseAuthService] Shadow auth already active for $shadowEmail',
+        );
+        return;
+      } else {
+        debugPrint(
+          '[FirebaseAuthService] Different user logged in (${_auth.currentUser!.email}). Signing out...',
+        );
+        await _auth.signOut();
+      }
+    }
+
+    try {
+      debugPrint(
+        '[FirebaseAuthService] Attempting shadow login for $shadowEmail...',
+      );
+      await _auth.signInWithEmailAndPassword(
+        email: shadowEmail,
+        password: password, // Use same password as custom auth
+      );
+      debugPrint('[FirebaseAuthService] Shadow login successful');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        debugPrint('[FirebaseAuthService] Shadow user not found. Creating...');
+        try {
+          await _auth.createUserWithEmailAndPassword(
+            email: shadowEmail,
+            password: password,
+          );
+          debugPrint(
+            '[FirebaseAuthService] Shadow account created successfully',
+          );
+        } catch (createError) {
+          debugPrint(
+            '[FirebaseAuthService] Failed to create shadow account: $createError',
+          );
+          // Re-throw if we can't create the user, as write permissions will likely fail
+          throw Exception('فشل إنشاء جلسة أمان (Shadow Auth)');
+        }
+      } else {
+        debugPrint('[FirebaseAuthService] Shadow login failed: ${e.message}');
+        // Allow to proceed? Maybe, but risky for permissions.
+        // Let's rethrow to be safe, ensuring consistency.
+        throw Exception('فشل تسجيل الدخول الأمني: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('[FirebaseAuthService] Unexpected error in shadow auth: $e');
     }
   }
 
