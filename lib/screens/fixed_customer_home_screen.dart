@@ -279,7 +279,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/customer'),
+                  onPressed: () => Navigator.pushNamed(context, '/register', arguments: 'customer'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

@@ -30,6 +30,8 @@ class WorkerLoginScreen extends StatelessWidget {
                   behavior: SnackBarBehavior.floating,
                 ),
               );
+              // Navigate to worker home screen
+              Navigator.pushReplacementNamed(context, '/worker');
             });
           }
         },
@@ -118,7 +120,7 @@ class WorkerLoginScreen extends StatelessWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.pushNamed(context, '/register'),
+                          onPressed: () => Navigator.pushNamed(context, '/register', arguments: 'worker'),
                           child: Text(
                             'إنشاء حساب',
                             style: TextStyle(

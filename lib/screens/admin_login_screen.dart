@@ -30,6 +30,8 @@ class AdminLoginScreen extends StatelessWidget {
                   behavior: SnackBarBehavior.floating,
                 ),
               );
+              // Navigate to admin home screen
+              Navigator.pushReplacementNamed(context, '/admin');
             });
           }
         },

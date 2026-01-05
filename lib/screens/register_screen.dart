@@ -12,6 +12,12 @@ class RegisterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    // Determine user type based on where we came from
+    // If we came from worker login, it's a worker registration
+    // If we came from customer home, it's a customer registration
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final isWorkerRegistration = args == 'worker';
 
     return Scaffold(
       body: BlocListener<AuthCubit, AuthState>(
@@ -30,6 +36,12 @@ class RegisterScreen extends StatelessWidget {
                   behavior: SnackBarBehavior.floating,
                 ),
               );
+              // Navigate to appropriate home screen based on user type
+              if (isWorkerRegistration) {
+                Navigator.pushReplacementNamed(context, '/worker');
+              } else {
+                Navigator.pushReplacementNamed(context, '/customer');
+              }
             });
           }
         },
