@@ -15,6 +15,7 @@ import 'screens/role_selection.dart';
 import 'screens/fixed_customer_home_screen.dart';
 import 'screens/send_request_screen.dart';
 import 'screens/worker_login.dart';
+import 'screens/worker_register_screen.dart';
 import 'screens/enhanced_worker_requests_screen.dart';
 import 'screens/admin_login_screen.dart';
 import 'screens/admin_register_screen.dart';
@@ -84,6 +85,7 @@ class _AppState extends State<App> {
               '/customer': (_) => const FixedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
+              '/register': (_) => const WorkerRegisterScreen(),
               '/worker': (_) => const EnhancedWorkerRequestsScreen(),
               '/admin': (_) => const EnhancedAdminDashboard(),
               '/admin-login': (_) => const AdminLoginScreen(),
