@@ -13,6 +13,9 @@ import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
 
@@ -34,24 +37,32 @@ class _EnhancedWorkerRequestsScreenState
     super.initState();
     _initializeWorker();
     _initializeFilter();
-    
+
     // Only fetch requests if worker is authenticated
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
+
       final authState = context.read<AuthCubit>().state;
-      debugPrint('[EnhancedWorkerRequestsScreen] Auth state: ${authState.runtimeType}');
-      
+      debugPrint(
+        '[EnhancedWorkerRequestsScreen] Auth state: ${authState.runtimeType}',
+      );
+
       if (authState is Authenticated) {
-        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}');
-        
+        debugPrint(
+          '[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}',
+        );
+
         // Add small delay to ensure currentUserId is set before fetching requests
         Future.delayed(const Duration(milliseconds: 100), () {
-          debugPrint('[EnhancedWorkerRequestsScreen] Fetching requests after delay...');
+          debugPrint(
+            '[EnhancedWorkerRequestsScreen] Fetching requests after delay...',
+          );
           context.read<RequestCubit>().getRequests();
         });
       } else {
-        debugPrint('[EnhancedWorkerRequestsScreen] Worker not authenticated, redirecting to login');
+        debugPrint(
+          '[EnhancedWorkerRequestsScreen] Worker not authenticated, redirecting to login',
+        );
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
@@ -59,20 +70,28 @@ class _EnhancedWorkerRequestsScreenState
 
   Future<void> _initializeWorker() async {
     try {
-      debugPrint('[EnhancedWorkerRequestsScreen] Initializing worker access...');
-      
+      debugPrint(
+        '[EnhancedWorkerRequestsScreen] Initializing worker access...',
+      );
+
       // Check authentication first
       final authState = context.read<AuthCubit>().state;
       if (authState is Authenticated) {
-        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}');
+        debugPrint(
+          '[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}',
+        );
         // Worker is authenticated, no need for custom fixes
       } else {
         debugPrint('[EnhancedWorkerRequestsScreen] User not authenticated');
       }
-      
-      debugPrint('[EnhancedWorkerRequestsScreen] Worker access initialized successfully');
+
+      debugPrint(
+        '[EnhancedWorkerRequestsScreen] Worker access initialized successfully',
+      );
     } catch (e) {
-      debugPrint('[EnhancedWorkerRequestsScreen] Error initializing worker: $e');
+      debugPrint(
+        '[EnhancedWorkerRequestsScreen] Error initializing worker: $e',
+      );
     }
   }
 
@@ -228,196 +247,285 @@ class _EnhancedWorkerRequestsScreenState
         }
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('طلبات العامل'),
-        backgroundColor: Colors.transparent,
-        actions: [
-          IconButton(
-            icon: Icon(_showMap ? Icons.list : Icons.map),
-            onPressed: () => setState(() => _showMap = !_showMap),
-            tooltip: _showMap ? 'عرض القائمة' : 'عرض الخريطة',
-          ),
-          IconButton(
-            icon: const Icon(Icons.bookmark),
-            onPressed: _showSavedFiltersDialog,
-            tooltip: 'الفلاتر المحفوظة',
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/user-profile'),
-            tooltip: 'الملف الشخصي',
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? AppColors.darkBackgroundGradient
-              : AppColors.backgroundGradient,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          title: const Text('طلبات العامل'),
+          backgroundColor: Colors.transparent,
+          actions: [
+            IconButton(
+              icon: Icon(_showMap ? Icons.list : Icons.map),
+              onPressed: () => setState(() => _showMap = !_showMap),
+              tooltip: _showMap ? 'عرض القائمة' : 'عرض الخريطة',
+            ),
+            IconButton(
+              icon: const Icon(Icons.bookmark),
+              onPressed: _showSavedFiltersDialog,
+              tooltip: 'الفلاتر المحفوظة',
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              onPressed: () => Navigator.pushNamed(context, '/user-profile'),
+              tooltip: 'الملف الشخصي',
+            ),
+          ],
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: GlassmorphicSearchBar(
-                  controller: _searchController,
-                  hintText: 'ابحث عن طلب...',
-                  onChanged: (value) {
-                    _updateFilter(_currentFilter.copyWith(searchQuery: value));
-                  },
-                  onClear: () {
-                    _updateFilter(_currentFilter.copyWith(searchQuery: ''));
-                  },
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? AppColors.darkBackgroundGradient
+                : AppColors.backgroundGradient,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GlassmorphicSearchBar(
+                    controller: _searchController,
+                    hintText: 'ابحث عن طلب...',
+                    onChanged: (value) {
+                      _updateFilter(
+                        _currentFilter.copyWith(searchQuery: value),
+                      );
+                    },
+                    onClear: () {
+                      _updateFilter(_currentFilter.copyWith(searchQuery: ''));
+                    },
+                  ),
                 ),
-              ),
 
-              // Filter Chips
-              if (_currentFilter.activeFiltersCount > 0)
-                Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      if (_currentFilter.category != null)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Chip(
-                            label: Text(_currentFilter.category!),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () =>
-                                _updateFilter(_currentFilter.clearCategory()),
-                          ),
-                        ),
-                      if (_currentFilter.area != null)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Chip(
-                            label: Text(_currentFilter.area!),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () =>
-                                _updateFilter(_currentFilter.clearArea()),
-                          ),
-                        ),
-                      if (_currentFilter.minBudget != null ||
-                          _currentFilter.maxBudget != null)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Chip(
-                            label: Text(
-                              '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
+                // Filter Chips
+                if (_currentFilter.activeFiltersCount > 0)
+                  Container(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        if (_currentFilter.category != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Text(_currentFilter.category!),
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              onDeleted: () =>
+                                  _updateFilter(_currentFilter.clearCategory()),
                             ),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () =>
-                                _updateFilter(_currentFilter.clearBudget()),
                           ),
-                        ),
-                      if (_currentFilter.maxDistance != null)
+                        if (_currentFilter.area != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Text(_currentFilter.area!),
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              onDeleted: () =>
+                                  _updateFilter(_currentFilter.clearArea()),
+                            ),
+                          ),
+                        if (_currentFilter.minBudget != null ||
+                            _currentFilter.maxBudget != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Text(
+                                '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
+                              ),
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              onDeleted: () =>
+                                  _updateFilter(_currentFilter.clearBudget()),
+                            ),
+                          ),
+                        if (_currentFilter.maxDistance != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Text(
+                                'حتى ${_currentFilter.maxDistance} كم',
+                              ),
+                              deleteIcon: const Icon(Icons.close, size: 18),
+                              onDeleted: () =>
+                                  _updateFilter(_currentFilter.clearDistance()),
+                            ),
+                          ),
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: Chip(
-                            label: Text('حتى ${_currentFilter.maxDistance} كم'),
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () =>
-                                _updateFilter(_currentFilter.clearDistance()),
+                          child: ActionChip(
+                            label: const Text('مسح الكل'),
+                            onPressed: () {
+                              _searchController.clear();
+                              _updateFilter(_currentFilter.clearAll());
+                            },
                           ),
                         ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          label: const Text('مسح الكل'),
-                          onPressed: () {
-                            _searchController.clear();
-                            _updateFilter(_currentFilter.clearAll());
-                          },
+                      ],
+                    ),
+                  ),
+
+                // Filter Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.filter_list),
+                          label: Text(
+                            _currentFilter.activeFiltersCount > 0
+                                ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
+                                : 'الفلاتر',
+                          ),
+                          onPressed: _showFilterDialog,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-              // Filter Button
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.filter_list),
-                        label: Text(
-                          _currentFilter.activeFiltersCount > 0
-                              ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
-                              : 'الفلاتر',
+                // Subscription Warning
+                BlocBuilder<AuthCubit, AuthState>(
+                  builder: (context, state) {
+                    if (state is Authenticated &&
+                        !state.user.isSubscriptionActive) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                        onPressed: _showFilterDialog,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Subscription Warning
-              BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, state) {
-                  if (state is Authenticated &&
-                      !state.user.isSubscriptionActive) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Card(
-                        color: Colors.orange.shade50,
-                        child: const ListTile(
-                          leading: Icon(Icons.info, color: Colors.orange),
-                          title: Text('انتهى الاشتراك'),
-                          subtitle: Text(
-                            'يرجى التجديد لعرض الطلبات واستلامها.',
+                        child: Card(
+                          color: Colors.orange.shade50,
+                          child: const ListTile(
+                            leading: Icon(Icons.info, color: Colors.orange),
+                            title: Text('انتهى الاشتراك'),
+                            subtitle: Text(
+                              'يرجى التجديد لعرض الطلبات واستلامها.',
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }
-                  if (state is! Authenticated) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Card(
-                        color: Colors.red.shade50,
-                        child: const ListTile(
-                          leading: Icon(Icons.lock, color: Colors.red),
-                          title: Text('غير مسجل الدخول'),
-                          subtitle: Text('يرجى تسجيل الدخول لاستلام الطلبات.'),
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-
-              // Requests List
-              Expanded(
-                child: BlocBuilder<RequestCubit, RequestState>(
-                  builder: (context, state) {
-                    if (state is RequestLoading) {
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: 5,
-                        itemBuilder: (context, index) =>
-                            const RequestCardSkeleton(),
                       );
                     }
+                    if (state is! Authenticated) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Card(
+                          color: Colors.red.shade50,
+                          child: const ListTile(
+                            leading: Icon(Icons.lock, color: Colors.red),
+                            title: Text('غير مسجل الدخول'),
+                            subtitle: Text(
+                              'يرجى تسجيل الدخول لاستلام الطلبات.',
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
 
-                    if (state is RequestError) {
+                // Requests List
+                Expanded(
+                  child: BlocBuilder<RequestCubit, RequestState>(
+                    builder: (context, state) {
+                      if (state is RequestLoading) {
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: 5,
+                          itemBuilder: (context, index) =>
+                              const RequestCardSkeleton(),
+                        );
+                      }
+
+                      if (state is RequestError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'حدث خطأ في تحميل الطلبات',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                state.message,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  context.read<RequestCubit>().getRequests();
+                                },
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('إعادة المحاولة'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (state is RequestLoaded) {
+                        final newRequests = state.requests
+                            .where((r) => r.status == 'new')
+                            .toList();
+                        final filteredRequests = _applyFilters(newRequests);
+
+                        if (filteredRequests.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inbox,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'لا توجد طلبات متاحة',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if (_currentFilter.activeFiltersCount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _updateFilter(_currentFilter.clearAll());
+                                    },
+                                    child: const Text('مسح الفلاتر'),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }
+
+                        return _showMap
+                            ? _buildMapView(filteredRequests)
+                            : _buildListView(filteredRequests);
+                      }
+
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -437,12 +545,11 @@ class _EnhancedWorkerRequestsScreenState
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              state.message,
+                              'يرجى المحاولة مرة أخرى',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[500],
                               ),
-                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
@@ -455,95 +562,13 @@ class _EnhancedWorkerRequestsScreenState
                           ],
                         ),
                       );
-                    }
-
-                    if (state is RequestLoaded) {
-                      final newRequests = state.requests
-                          .where((r) => r.status == 'new')
-                          .toList();
-                      final filteredRequests = _applyFilters(newRequests);
-
-                      if (filteredRequests.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox,
-                                size: 64,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'لا توجد طلبات متاحة',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              if (_currentFilter.activeFiltersCount > 0) ...[
-                                const SizedBox(height: 8),
-                                TextButton(
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _updateFilter(_currentFilter.clearAll());
-                                  },
-                                  child: const Text('مسح الفلاتر'),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      }
-
-                      return _showMap
-                          ? _buildMapView(filteredRequests)
-                          : _buildListView(filteredRequests);
-                    }
-
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'حدث خطأ في تحميل الطلبات',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'يرجى المحاولة مرة أخرى',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              context.read<RequestCubit>().getRequests();
-                            },
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('إعادة المحاولة'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -596,12 +621,44 @@ class _EnhancedWorkerRequestsScreenState
                       );
                       context.read<RequestCubit>().getRequests();
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('فشل في استلام الطلب: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      // Debugging Helper: Show detailed error info
+                      final auth = FirebaseAuth.instance;
+                      final user = auth.currentUser;
+                      String debugInfo = 'User: ${user?.uid ?? "null"}\n';
+
+                      // Check if doc exists (async check)
+                      FirebaseFirestore.instance
+                          .collection('workers')
+                          .doc(user?.uid)
+                          .get()
+                          .then((doc) {
+                            debugInfo += 'WorkerDoc Exists: ${doc.exists}\n';
+                            debugInfo += 'Error: $e';
+
+                            if (context.mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('فشل استلام الطلب'),
+                                  content: SingleChildScrollView(
+                                    child: SelectableText(
+                                      'حدث خطأ غير متوقع.\n\nتفاصيل الخطأ (للمطور):\n$debugInfo',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        // Copy to clipboard or just close
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text('حسناً'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          });
                     }
                   },
                 ),

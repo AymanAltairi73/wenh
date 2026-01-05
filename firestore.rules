@@ -21,14 +21,10 @@ service cloud.firestore {
         (
           // Option 1: Worker taking the request
           (
-            request.auth.uid in get(/databases/$(database)/documents/workers/$(request.auth.uid)).data.uid &&
-            request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'takenBy']) &&
-            request.resource.data.status == 'taken' &&
-            request.resource.data.takenBy == request.auth.uid
-          ) ||
-          // Option 2: Admin updating status (e.g. closing/archiving)
-          (
-            exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+            // Verify the user is a valid worker or admin
+            (exists(/databases/$(database)/documents/workers/$(request.auth.uid)) || 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid))) &&
+            request.resource.data.status == 'taken'
           )
         );
     }

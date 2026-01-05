@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'cubits/request_cubit.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/admin_cubit.dart';
+import 'cubits/worker_request_cubit.dart';
 import 'cubits/theme_cubit.dart';
 import 'services/firestore_service.dart';
 
@@ -55,6 +56,7 @@ class _AppState extends State<App> {
         BlocProvider(
           create: (_) => AdminCubit(firestoreService: _firestoreService),
         ),
+        BlocProvider(create: (_) => WorkerRequestCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
