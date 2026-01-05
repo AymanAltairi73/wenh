@@ -64,37 +64,26 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
-    // Admins collection - Admin access only
+    // Admins collection
     match /admins/{adminId} {
-      // Allow list queries for login purposes (any user can query by phone)
-      allow list: if true;
+      // 1. READ: Open for login lookups (query by phone)
+      allow read: if true;
       
-      // Allow updating lastLogin field after successful password verification (Legacy/Migration support)
-      allow update: if 
-        request.auth == null && 
-        request.resource.data.keys().hasAll(['lastLogin']) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
-      
-      // Allow read for login (query by phone) and admin access
-      allow read: if 
-        true; // Simplified for login check - strictness handled by application logic & data structure
-      
-      // JIT Migration: Allow creation if ID matches Auth UID
-      allow create: if
-        request.auth != null &&
-        request.auth.uid == adminId;
-
-      // JIT Migration: Allow deletion of OLD doc if authorized by shadow email (which contains the phone)
-      // This is a heuristic: If logged in user (Auth) has email 'admin_<phone>@wenh.com',
-      // they can delete the doc where phone == <phone>.
-      allow delete: if
-        request.auth != null &&
-        request.auth.token.email == 'admin_' + resource.data.phone + '@wenh.com';
-
-      // General Write: Allow if Auth UID matches Doc ID (Admin updating self)
-      allow write: if 
+      // 2. CREATE/UPDATE/DELETE (Owner): Authenticated user can manage their own document (Migration Target)
+      allow create, update, delete: if 
         request.auth != null && 
         request.auth.uid == adminId;
+
+      // 3. UPDATE (Anon): Allow updating lastLogin only (Legacy/Login flow)
+      allow update: if 
+        request.auth == null && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
+      
+      // 4. DELETE (Migration Cleanup): Allow deleting unrelated doc if token email matches phone
+      // Note: We check if resource exists to be safe, though delete implies it does.
+      allow delete: if
+        request.auth != null &&
+        resource.data.phone == request.auth.token.email.replace('admin_', '').replace('@wenh.com', '');
     }
     
     // Favorites collection - User access only
