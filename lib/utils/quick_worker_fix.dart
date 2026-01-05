@@ -6,25 +6,34 @@ import 'package:flutter/foundation.dart';
 class QuickWorkerFix {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  String? _customUserId;
+  
+  /// Set custom user ID (for non-Firebase Auth users)
+  void setCustomUserId(String? userId) {
+    _customUserId = userId;
+    debugPrint('[QuickWorkerFix] Custom user ID set to: $userId');
+  }
 
-  String? get currentUserId => _auth.currentUser?.uid;
+  String? get currentUserId => _customUserId ?? _auth.currentUser?.uid;
 
   /// Quick fix for worker login and access
   Future<void> quickFix() async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) {
+      // Check for custom auth first, then Firebase Auth
+      final userId = _customUserId ?? _auth.currentUser?.uid;
+      
+      if (userId == null) {
         throw Exception('المستخدم غير مصرح له');
       }
 
-      final userId = user.uid;
       debugPrint('[QuickWorkerFix] Starting quick fix for: $userId');
 
       // 1. Create users document if not exists
-      await _createUserDocument(userId, user);
+      await _createUserDocument(userId);
 
       // 2. Create worker document if not exists
-      await _createWorkerDocument(userId, user);
+      await _createWorkerDocument(userId);
 
       // 3. Test access to requests
       await _testRequestsAccess();
@@ -36,15 +45,15 @@ class QuickWorkerFix {
     }
   }
 
-  Future<void> _createUserDocument(String userId, User user) async {
+  Future<void> _createUserDocument(String userId) async {
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       
       if (!userDoc.exists) {
         await _firestore.collection('users').doc(userId).set({
           'uid': userId,
-          'email': user.email ?? '',
-          'name': user.displayName ?? 'عامل',
+          'email': '',
+          'name': 'عامل',
           'role': 'worker',
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -55,15 +64,15 @@ class QuickWorkerFix {
     }
   }
 
-  Future<void> _createWorkerDocument(String userId, User user) async {
+  Future<void> _createWorkerDocument(String userId) async {
     try {
       final workerDoc = await _firestore.collection('workers').doc(userId).get();
       
       if (!workerDoc.exists) {
         await _firestore.collection('workers').doc(userId).set({
           'uid': userId,
-          'name': user.displayName ?? 'عامل',
-          'email': user.email ?? '',
+          'name': 'عامل',
+          'email': '',
           'subscription': false,
           'subscriptionActive': false,
           'subscriptionPlan': 'none',
@@ -113,7 +122,7 @@ class QuickWorkerFix {
         final requests = snapshot.docs
             .map((doc) => {
                   'id': doc.id,
-                  ...doc.data() as Map<String, dynamic>,
+                  ...doc.data(),
                 })
             .toList();
         
@@ -146,7 +155,7 @@ class QuickWorkerFix {
         final requests = snapshot.docs
             .map((doc) => {
                   'id': doc.id,
-                  ...doc.data() as Map<String, dynamic>,
+                  ...doc.data(),
                 })
             .toList();
         

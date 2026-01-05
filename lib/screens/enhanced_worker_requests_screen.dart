@@ -35,11 +35,42 @@ class _EnhancedWorkerRequestsScreenState
     super.initState();
     _initializeWorker();
     _initializeFilter();
+    
+    // Only fetch requests if worker is authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      final authState = context.read<AuthCubit>().state;
+      debugPrint('[EnhancedWorkerRequestsScreen] Auth state: ${authState.runtimeType}');
+      
+      if (authState is Authenticated) {
+        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated, setting custom user ID...');
+        _quickWorkerFix.setCustomUserId(authState.user.uid);
+        
+        // Add small delay to ensure currentUserId is set before fetching requests
+        Future.delayed(const Duration(milliseconds: 100), () {
+          debugPrint('[EnhancedWorkerRequestsScreen] Fetching requests after delay...');
+          context.read<RequestCubit>().getRequests();
+        });
+      } else {
+        debugPrint('[EnhancedWorkerRequestsScreen] User is not authenticated, skipping request fetch');
+      }
+    });
   }
 
   Future<void> _initializeWorker() async {
     try {
       debugPrint('[EnhancedWorkerRequestsScreen] Initializing worker access...');
+      
+      // Check authentication first
+      final authState = context.read<AuthCubit>().state;
+      if (authState is Authenticated) {
+        _quickWorkerFix.setCustomUserId(authState.user.uid);
+        debugPrint('[EnhancedWorkerRequestsScreen] Set custom user ID: ${authState.user.uid}');
+      } else {
+        debugPrint('[EnhancedWorkerRequestsScreen] User not authenticated, cannot set custom user ID');
+      }
+      
       await _quickWorkerFix.quickFix();
       debugPrint('[EnhancedWorkerRequestsScreen] Worker access initialized successfully');
     } catch (e) {
@@ -206,7 +237,7 @@ class _EnhancedWorkerRequestsScreenState
           ),
           IconButton(
             icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/worker-profile'),
+            onPressed: () => Navigator.pushNamed(context, '/user-profile'),
             tooltip: 'الملف الشخصي',
           ),
         ],
@@ -327,7 +358,7 @@ class _EnhancedWorkerRequestsScreenState
               BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
                   if (state is Authenticated &&
-                      !state.worker.isSubscriptionActive) {
+                      !state.user.isSubscriptionActive) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -512,10 +543,10 @@ class _EnhancedWorkerRequestsScreenState
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         bool disabled = true;
-        String workerName = '';
+        String userName = '';
         if (authState is Authenticated) {
-          disabled = !authState.worker.isSubscriptionActive;
-          workerName = authState.worker.name;
+          disabled = !authState.user.isSubscriptionActive;
+          userName = authState.user.name;
         }
 
         return RefreshIndicator(
@@ -543,8 +574,8 @@ class _EnhancedWorkerRequestsScreenState
                 child: _EnhancedRequestCard(
                   request: request,
                   disabled: disabled,
-                  workerName: workerName,
-                  onTakeRequest: (requestId, workerName) async {
+                  userName: userName,
+                  onTakeRequest: (requestId, userName) async {
                     try {
                       final quickFix = QuickWorkerFix();
                       await quickFix.takeRequest(requestId);
@@ -603,13 +634,13 @@ class _EnhancedWorkerRequestsScreenState
 class _EnhancedRequestCard extends StatelessWidget {
   final RequestModel request;
   final bool disabled;
-  final String workerName;
-  final Function(String requestId, String workerName) onTakeRequest;
+  final String userName;
+  final Function(String requestId, String userName) onTakeRequest;
 
   const _EnhancedRequestCard({
     required this.request,
     required this.disabled,
-    required this.workerName,
+    required this.userName,
     required this.onTakeRequest,
   });
 
@@ -782,7 +813,7 @@ class _EnhancedRequestCard extends StatelessWidget {
                       onPressed: disabled
                           ? null
                           : () {
-                              onTakeRequest(request.id, workerName);
+                              onTakeRequest(request.id, userName);
                             },
                     ),
                   ),

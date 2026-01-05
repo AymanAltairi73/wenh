@@ -8,51 +8,91 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String? get currentUserId => _auth.currentUser?.uid;
+  String? _currentUserId;
+
+  String? get currentUserId => _currentUserId ?? _auth.currentUser?.uid;
+
+  /// Set current user ID for custom authentication (e.g., admin login)
+  void setCurrentUserId(String? userId) {
+    _currentUserId = userId;
+    debugPrint('[FirestoreService] Current user ID set to: $userId');
+  }
+
+  /// Clear current user ID (for logout)
+  void clearCurrentUserId() {
+    debugPrint('[FirestoreService] Current user ID cleared (was: $_currentUserId)');
+    _currentUserId = null;
+  }
 
   Stream<List<RequestModel>> getRequests({
     String? status,
     String? area,
     int limit = 50,
   }) {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[$operationId] [START] getRequests - status: $status, area: $area, limit: $limit');
+    
     try {
-      // Ensure user is authenticated
-      if (_auth.currentUser == null) {
-        throw Exception('يجب تسجيل الدخول لجلب الطلبات');
+      // Check authentication - support both Firebase Auth and custom admin auth
+      final hasFirebaseAuth = _auth.currentUser != null;
+      final hasCustomAuth = currentUserId != null; // This will be set by AdminCubit
+      
+      debugPrint('[$operationId] [AUTH] Firebase: $hasFirebaseAuth, Custom: $hasCustomAuth, CurrentUserId: $currentUserId');
+      
+      if (!hasFirebaseAuth && !hasCustomAuth) {
+        final error = 'يجب تسجيل الدخول لجلب الطلبات';
+        debugPrint('[$operationId] [ERROR] Authentication failed: $error');
+        throw Exception(error);
       }
 
       Query query = _firestore.collection('requests');
+      debugPrint('[$operationId] [QUERY] Collection: requests');
 
       if (status != null) {
         query = query.where('status', isEqualTo: status);
+        debugPrint('[$operationId] [FILTER] Status filter: $status');
       }
 
       if (area != null) {
         query = query.where('area', isEqualTo: area);
+        debugPrint('[$operationId] [FILTER] Area filter: $area');
       }
 
       query = query.orderBy('createdAt', descending: true).limit(limit);
+      debugPrint('[$operationId] [QUERY] Final query built with limit: $limit');
 
       return query.snapshots().map((snapshot) {
+        debugPrint('[$operationId] [RESULT] Snapshot received with ${snapshot.docs.length} documents');
+        
         // Handle empty result gracefully
         if (snapshot.docs.isEmpty) {
+          debugPrint('[$operationId] [SUCCESS] No documents found, returning empty list');
           return <RequestModel>[];
         }
         
         final requests = <RequestModel>[];
+        int successCount = 0;
+        int errorCount = 0;
+        
         for (final doc in snapshot.docs) {
           try {
             requests.add(RequestModel.fromFirestore(doc));
+            successCount++;
           } catch (e) {
-            debugPrint('[FirestoreService] Error parsing request: $e');
+            errorCount++;
+            debugPrint('[$operationId] [ERROR] Error parsing request ${doc.id}: $e');
             // Skip invalid documents but continue processing others
           }
         }
+        
+        debugPrint('[$operationId] [SUCCESS] Processed $successCount requests, $errorCount errors');
         return requests;
       }).handleError((error) {
+        debugPrint('[$operationId] [STREAM_ERROR] Stream error: $error');
         throw _handleFirestoreError(error);
       });
     } catch (e) {
+      debugPrint('[$operationId] [CATCH_ERROR] Operation failed: $e');
       throw _handleFirestoreError(e);
     }
   }
@@ -91,43 +131,67 @@ class FirestoreService {
   }
 
   Future<String> createRequest(RequestModel request) async {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[$operationId] [START] createRequest - type: ${request.type}, area: ${request.area}');
+    
     try {
-      // Ensure user is authenticated
-      if (_auth.currentUser == null) {
-        throw Exception('يجب تسجيل الدخول لإنشاء طلب');
+      // Check authentication - support both Firebase Auth and custom admin auth
+      final hasFirebaseAuth = _auth.currentUser != null;
+      final hasCustomAuth = currentUserId != null;
+      
+      debugPrint('[$operationId] [AUTH] Firebase: $hasFirebaseAuth, Custom: $hasCustomAuth, CurrentUserId: $currentUserId');
+      
+      if (!hasFirebaseAuth && !hasCustomAuth) {
+        final error = 'يجب تسجيل الدخول لإنشاء طلب';
+        debugPrint('[$operationId] [ERROR] Authentication failed: $error');
+        throw Exception(error);
       }
 
       // Create request with additional security fields
       final requestData = request.toFirestore();
-      requestData['createdBy'] = _auth.currentUser!.uid;
+      requestData['createdBy'] = hasFirebaseAuth ? _auth.currentUser!.uid : currentUserId;
       requestData['createdAt'] = FieldValue.serverTimestamp();
       requestData['status'] = 'new';
+      
+      debugPrint('[$operationId] [DATA] Request data: $requestData');
 
       final docRef = await _firestore
           .collection('requests')
           .add(requestData);
       
-      debugPrint('[FirestoreService] Request created successfully: ${docRef.id}');
+      debugPrint('[$operationId] [SUCCESS] Request created successfully: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      debugPrint('[FirestoreService] Error creating request: $e');
+      debugPrint('[$operationId] [ERROR] Error creating request: $e');
       throw _handleFirestoreError(e);
     }
   }
 
   Future<void> takeRequest(String requestId) async {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[$operationId] [START] takeRequest - requestId: $requestId');
+    
     if (currentUserId == null) {
-      throw Exception('User not authenticated');
+      final error = 'User not authenticated';
+      debugPrint('[$operationId] [ERROR] $error');
+      throw Exception(error);
     }
 
     try {
-      await _firestore.collection('requests').doc(requestId).update({
+      final updateData = {
         'status': 'taken',
         'takenBy': currentUserId,
         'takenAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+      
+      debugPrint('[$operationId] [DATA] Update data: $updateData');
+
+      await _firestore.collection('requests').doc(requestId).update(updateData);
+      
+      debugPrint('[$operationId] [SUCCESS] Request taken successfully: $requestId');
     } catch (e) {
+      debugPrint('[$operationId] [ERROR] Error taking request: $e');
       throw _handleFirestoreError(e);
     }
   }
@@ -137,6 +201,9 @@ class FirestoreService {
     String newStatus, {
     String? cancelReason,
   }) async {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[$operationId] [START] updateRequestStatus - requestId: $requestId, newStatus: $newStatus');
+    
     try {
       final updateData = {
         'status': newStatus,
@@ -151,17 +218,28 @@ class FirestoreService {
           updateData['cancelReason'] = cancelReason;
         }
       }
+      
+      debugPrint('[$operationId] [DATA] Update data: $updateData');
 
       await _firestore.collection('requests').doc(requestId).update(updateData);
+      
+      debugPrint('[$operationId] [SUCCESS] Request status updated successfully: $requestId -> $newStatus');
     } catch (e) {
+      debugPrint('[$operationId] [ERROR] Error updating request status: $e');
       throw _handleFirestoreError(e);
     }
   }
 
   Future<void> deleteRequest(String requestId) async {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[$operationId] [START] deleteRequest - requestId: $requestId');
+    
     try {
       await _firestore.collection('requests').doc(requestId).delete();
+      
+      debugPrint('[$operationId] [SUCCESS] Request deleted successfully: $requestId');
     } catch (e) {
+      debugPrint('[$operationId] [ERROR] Error deleting request: $e');
       throw _handleFirestoreError(e);
     }
   }

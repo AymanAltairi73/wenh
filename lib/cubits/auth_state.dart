@@ -16,10 +16,13 @@ class AuthLoading extends AuthState {
 }
 
 class Authenticated extends AuthState {
-  final WorkerModel worker;
-  const Authenticated(this.worker);
+  final WorkerModel user;
+  const Authenticated(this.user);
+  
+  WorkerModel get current => user;
+  
   @override
-  List<Object?> get props => [worker];
+  List<Object?> get props => [user];
 }
 
 class AuthError extends AuthState {

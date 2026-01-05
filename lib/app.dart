@@ -49,8 +49,7 @@ class _AppState extends State<App> {
       providers: [
         BlocProvider(create: (_) => ThemeCubit()),
         BlocProvider(
-          create: (_) =>
-              RequestCubit(firestoreService: _firestoreService)..getRequests(),
+          create: (_) => RequestCubit(firestoreService: _firestoreService),
         ),
         BlocProvider(create: (_) => AuthCubit()),
         BlocProvider(create: (_) => AdminCubit()),

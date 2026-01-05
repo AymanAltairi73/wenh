@@ -21,7 +21,7 @@ class SubscriptionSelectionScreen extends StatelessWidget {
         ),
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
-            if (state is Authenticated && state.worker.isSubscriptionActive) {
+            if (state is Authenticated && state.user.isSubscriptionActive) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('تم تفعيل الاشتراك بنجاح'),

@@ -27,8 +27,8 @@ class WorkerProfileScreen extends StatelessWidget {
             return const Center(child: Text('يرجى تسجيل الدخول أولاً'));
           }
 
-          final worker = authState.worker;
-          final isActive = worker.isSubscriptionActive;
+          final user = authState.user;
+          final isActive = user.isSubscriptionActive;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -49,7 +49,7 @@ class WorkerProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        worker.name,
+                        user.name,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -57,7 +57,7 @@ class WorkerProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        worker.email,
+                        user.email,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -132,7 +132,7 @@ class WorkerProfileScreen extends StatelessWidget {
 
                         if (state is RequestLoaded) {
                           myRequests = state.requests
-                              .where((r) => r.takenBy == worker.name)
+                              .where((r) => r.takenBy == user.name)
                               .length;
                           availableRequests = state.requests
                               .where((r) => r.status == 'new')
