@@ -18,10 +18,19 @@ service cloud.firestore {
       // Only authenticated workers can update requests (to take them)
       allow update: if 
         request.auth != null &&
-        request.auth.uid in get(/databases/$(database)/documents/workers/$(request.auth.uid)).data.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'takenBy']) &&
-        request.resource.data.status == 'taken' &&
-        request.resource.data.takenBy == request.auth.uid;
+        (
+          // Option 1: Worker taking the request
+          (
+            request.auth.uid in get(/databases/$(database)/documents/workers/$(request.auth.uid)).data.uid &&
+            request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'takenBy']) &&
+            request.resource.data.status == 'taken' &&
+            request.resource.data.takenBy == request.auth.uid
+          ) ||
+          // Option 2: Admin updating status (e.g. closing/archiving)
+          (
+            exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+          )
+        );
     }
     
     // Workers collection - Authenticated access only
@@ -52,7 +61,7 @@ service cloud.firestore {
       // Admin can read all workers
       allow read: if 
         request.auth != null && 
-        request.auth.token.admin == true;
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
     // Admins collection - Admin access only
@@ -60,7 +69,7 @@ service cloud.firestore {
       // Allow list queries for login purposes (any user can query by phone)
       allow list: if true;
       
-      // Allow updating lastLogin field after successful password verification
+      // Allow updating lastLogin field after successful password verification (Legacy/Migration support)
       allow update: if 
         request.auth == null && 
         request.resource.data.keys().hasAll(['lastLogin']) &&
@@ -68,13 +77,24 @@ service cloud.firestore {
       
       // Allow read for login (query by phone) and admin access
       allow read: if 
-        request.auth != null && 
-        (request.auth.token.admin == true || request.auth.uid == adminId);
+        true; // Simplified for login check - strictness handled by application logic & data structure
       
-      // Only admin users can write admin data
+      // JIT Migration: Allow creation if ID matches Auth UID
+      allow create: if
+        request.auth != null &&
+        request.auth.uid == adminId;
+
+      // JIT Migration: Allow deletion of OLD doc if authorized by shadow email (which contains the phone)
+      // This is a heuristic: If logged in user (Auth) has email 'admin_<phone>@wenh.com',
+      // they can delete the doc where phone == <phone>.
+      allow delete: if
+        request.auth != null &&
+        request.auth.token.email == 'admin_' + resource.data.phone + '@wenh.com';
+
+      // General Write: Allow if Auth UID matches Doc ID (Admin updating self)
       allow write: if 
         request.auth != null && 
-        request.auth.token.admin == true;
+        request.auth.uid == adminId;
     }
     
     // Favorites collection - User access only

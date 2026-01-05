@@ -91,51 +91,98 @@ class FirebaseAuthService {
   /// Sign in admin with phone number and password only
   Future<AdminModel?> loginAdmin(String phoneNumber, String password) async {
     try {
-      // Find admin by phone number in Firestore
-      final adminsSnapshot = await _firestore
-          .collection('admins')
-          .where('phone', isEqualTo: phoneNumber)
-          .get();
-
-      if (adminsSnapshot.docs.isEmpty) {
-        throw Exception(
-          'هذا الرقم غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.',
-        );
-      }
-
-      final adminDoc = adminsSnapshot.docs.first;
-      final data = adminDoc.data();
-      final storedPassword = data['password'];
-
-      if (storedPassword != password) {
-        throw Exception('كلمة المرور غير صحيحة');
-      }
-
-      // Create a custom session without Firebase Auth
-      // We'll use the admin's UID as the session identifier
-      final adminUid = adminDoc.id;
-
-      // Ensure Firebase Auth session exists for Firestore security rules
-      // We use "Shadow Auth": creating a Firebase User with a synthetic email
-      // based on the phone number. This satisfies valid auth requirements.
+      // 1. Ensure Firebase Auth session exists FIRST (Shadow Auth)
+      // This is crucial for permission checks during migration
       await _ensureShadowAuth(phoneNumber, password);
 
-      // Update last login
-      await _firestore.collection('admins').doc(adminUid).update({
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('فشل إنشاء جلسة أمان');
+      }
 
-      return AdminModel(
-        id: adminUid,
-        name: data['name'],
-        email: data['email'] ?? '',
-        phone: data['phone'] ?? phoneNumber,
-        role: AdminRole.admin, // Default role
-        isActive: data['isActive'] ?? true,
-        createdAt:
-            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        permissions: Map<String, bool>.from(data['permissions'] ?? {}),
-      );
+      // 2. Check if Admin Document exists with the SHADOW UID (Correct State)
+      final adminDocRef = _firestore.collection('admins').doc(currentUser.uid);
+      final adminDocSnapshot = await adminDocRef.get();
+
+      if (adminDocSnapshot.exists) {
+        // --- HAPPY PATH: Admin already migrated ---
+        final data = adminDocSnapshot.data()!;
+        final storedPassword = data['password'];
+
+        if (storedPassword != password) {
+          throw Exception('كلمة المرور غير صحيحة');
+        }
+
+        // Update last login
+        await adminDocRef.update({'lastLogin': FieldValue.serverTimestamp()});
+
+        return AdminModel(
+          id: currentUser.uid,
+          name: data['name'],
+          email: data['email'] ?? '',
+          phone: data['phone'] ?? phoneNumber,
+          role: AdminRole.admin,
+          isActive: data['isActive'] ?? true,
+          createdAt:
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          permissions: Map<String, bool>.from(data['permissions'] ?? {}),
+        );
+      } else {
+        // --- MIGRATION PATH: Admin exists but with OLD ID (Phone-based query) ---
+        final oldAdminsSnapshot = await _firestore
+            .collection('admins')
+            .where('phone', isEqualTo: phoneNumber)
+            .get();
+
+        if (oldAdminsSnapshot.docs.isEmpty) {
+          throw Exception(
+            'هذا الرقم غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.',
+          );
+        }
+
+        final oldDoc = oldAdminsSnapshot.docs.first;
+        final oldData = oldDoc.data();
+        final storedPassword = oldData['password'];
+
+        if (storedPassword != password) {
+          throw Exception('كلمة المرور غير صحيحة');
+        }
+
+        // PERFORM MIGRATION: Copy data to new ID (Shadow UID)
+        debugPrint(
+          '[FirebaseAuthService] Migrating admin ${oldDoc.id} to ${currentUser.uid}...',
+        );
+
+        final newAdminData = Map<String, dynamic>.from(oldData);
+        newAdminData['uid'] = currentUser.uid; // Update UID in data
+        newAdminData['lastLogin'] = FieldValue.serverTimestamp();
+
+        // 1. Create new document
+        await adminDocRef.set(newAdminData);
+
+        // 2. Delete old document
+        try {
+          await oldDoc.reference.delete();
+          debugPrint('[FirebaseAuthService] Old admin document deleted.');
+        } catch (e) {
+          debugPrint(
+            '[FirebaseAuthService] Warning: Failed to delete old admin doc: $e',
+          );
+          // Continue anyway, as new doc is created
+        }
+
+        return AdminModel(
+          id: currentUser.uid,
+          name: oldData['name'],
+          email: oldData['email'] ?? '',
+          phone: oldData['phone'] ?? phoneNumber,
+          role: AdminRole.admin,
+          isActive: oldData['isActive'] ?? true,
+          createdAt:
+              (oldData['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          permissions: Map<String, bool>.from(oldData['permissions'] ?? {}),
+        );
+      }
     } catch (e) {
       if (e is Exception) throw e;
       throw Exception('فشل تسجيل الدخول: $e');
