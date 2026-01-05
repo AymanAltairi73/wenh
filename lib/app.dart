@@ -97,6 +97,8 @@ class _AppState extends State<App> {
               '/settings': (_) => const SettingsScreen(),
               '/customer-profile': (_) => const CustomerProfileScreen(),
               '/worker-profile': (_) => const WorkerProfileScreen(),
+              '/user-profile': (_) =>
+                  const WorkerProfileScreen(), // Alias for compatibility with enhanced screen
               '/subscription': (_) => const SubscriptionSelectionScreen(),
             },
           );
