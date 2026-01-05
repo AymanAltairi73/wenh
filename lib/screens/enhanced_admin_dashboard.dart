@@ -4,12 +4,14 @@ import 'package:wenh/cubits/admin_state.dart';
 import 'package:wenh/cubits/request_state.dart';
 import '../cubits/admin_cubit.dart';
 import '../cubits/request_cubit.dart';
+import '../cubits/admin_stats_cubit.dart';
 import '../models/worker_model.dart';
 import '../services/app_repository.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
 import 'package:wenh/widgets/professional_dialog.dart';
 import 'package:wenh/widgets/stat_card.dart';
+import 'package:wenh/widgets/revenue_chart.dart';
 import 'package:wenh/widgets/request_card.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
 
@@ -262,111 +264,168 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   }
 
   Widget _buildRevenueTab() {
-    final repository = AppRepository();
-    return FutureBuilder<Map<String, dynamic>>(
-      future: repository.getStatistics(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 48,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'خطأ في تحميل الإحصائيات',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${snapshot.error}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: Text('لا توجد بيانات إحصائية'));
-        }
-
-        final stats = snapshot.data!;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              StatCard(
-                title: 'إجمالي الأرباح',
-                value: '${stats['totalRevenue']} د.ع',
-                icon: Icons.monetization_on,
-                color: Colors.green,
-              ),
-              const SizedBox(height: 24),
-              Row(
+    return BlocProvider(
+      create: (context) => AdminStatsCubit()..fetchStats(),
+      child: BlocBuilder<AdminStatsCubit, AdminStatsState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (state.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  StatCard(
-                    title: 'إجمالي العمال',
-                    value: '${stats['totalWorkers']}',
-                    icon: Icons.people,
-                    color: AppColors.primary,
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.red,
                   ),
-                  const SizedBox(width: 16),
-                  StatCard(
-                    title: 'العمال النشطين',
-                    value: '${stats['activeWorkers']}',
-                    icon: Icons.person,
-                    color: Colors.green,
+                  const SizedBox(height: 16),
+                  Text(
+                    'خطأ في تحميل الإحصائيات',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.error!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.read<AdminStatsCubit>().refreshStats(),
+                    child: const Text('إعادة المحاولة'),
                   ),
                 ],
               ),
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [AppColors.softShadow],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'عدد المشتركين الفعليين',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<AdminStatsCubit>().refreshStats();
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // Revenue Overview
+                  StatCard(
+                    title: 'إجمالي الأرباح',
+                    value: '${state.revenueData.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)} د.ع',
+                    icon: Icons.monetization_on,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Worker Stats
+                  Row(
+                    children: [
+                      StatCard(
+                        title: 'إجمالي العمال',
+                        value: '${state.stats['totalWorkers'] ?? 0}',
+                        icon: Icons.people,
+                        color: AppColors.primary,
                       ),
+                      const SizedBox(width: 16),
+                      StatCard(
+                        title: 'العمال النشطين',
+                        value: '${state.stats['activeWorkers'] ?? 0}',
+                        icon: Icons.person,
+                        color: Colors.green,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Request Stats
+                  Row(
+                    children: [
+                      StatCard(
+                        title: 'إجمالي الطلبات',
+                        value: '${state.stats['totalRequests'] ?? 0}',
+                        icon: AppIcons.requests,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 16),
+                      StatCard(
+                        title: 'الطلبات المكتملة',
+                        value: '${state.stats['completedRequests'] ?? 0}',
+                        icon: Icons.check_circle,
+                        color: Colors.purple,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Revenue Chart
+                  if (state.revenueData.isNotEmpty) ...[
+                    RevenueChart(
+                      revenueData: state.revenueData,
+                      title: 'الأرباح الشهرية',
+                      chartColor: Colors.green,
                     ),
-                    const SizedBox(height: 16),
-                    _buildRevenueRow(
-                      'خطط أسبوعية',
-                      '${stats['weeklyCount'] ?? 0} عمال',
-                    ),
-                    const Divider(),
-                    _buildRevenueRow(
-                      'خطط شهرية',
-                      '${stats['monthlyCount'] ?? 0} عمال',
-                    ),
+                    const SizedBox(height: 24),
                   ],
-                ),
+                  
+                  // Subscription Stats
+                  if (state.subscriptionData.isNotEmpty) ...[
+                    SubscriptionStatsChart(
+                      subscriptionData: state.subscriptionData,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  
+                  // Detailed Stats
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [AppColors.softShadow],
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'تفاصيل الطلبات',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildRevenueRow(
+                          'طلبات جديدة',
+                          '${state.stats['newRequests'] ?? 0}',
+                        ),
+                        const Divider(),
+                        _buildRevenueRow(
+                          'طلبات مستلمة',
+                          '${state.stats['takenRequests'] ?? 0}',
+                        ),
+                        const Divider(),
+                        _buildRevenueRow(
+                          'طلبات مكتملة',
+                          '${state.stats['completedRequests'] ?? 0}',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
 
