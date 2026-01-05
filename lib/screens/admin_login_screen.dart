@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/admin_cubit.dart';
 import 'package:wenh/cubits/admin_state.dart';
@@ -15,7 +14,26 @@ class AdminLoginScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
+      body: BlocListener<AdminCubit, AdminState>(
+        listener: (context, state) {
+          if (state is AdminAuthenticated) {
+            // Show success message only once when authenticated
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'تم تسجيل الدخول بنجاح',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            });
+          }
+        },
+        child: Container(
         decoration: BoxDecoration(
           gradient: isDark 
             ? AppColors.darkBackgroundGradient
@@ -119,6 +137,7 @@ class AdminLoginScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     ));
   }

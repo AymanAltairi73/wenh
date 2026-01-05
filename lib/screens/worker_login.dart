@@ -14,7 +14,26 @@ class WorkerLoginScreen extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
+      body: BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is Authenticated) {
+            // Show success message only once when authenticated
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'تم تسجيل الدخول بنجاح',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            });
+          }
+        },
+        child: Container(
         decoration: BoxDecoration(
           gradient: isDark 
             ? AppColors.darkBackgroundGradient
@@ -119,7 +138,8 @@ class WorkerLoginScreen extends StatelessWidget {
           ),
         ),
       ),
-    )  );
+      ),
+    ));
   }
 }
 

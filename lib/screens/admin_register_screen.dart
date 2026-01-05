@@ -49,11 +49,20 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           }
           
           if (state is AdminAuthenticated) {
-            ProfessionalDialog.showSuccess(
-              context: context,
-              title: 'تم إنشاء الحساب',
-              message: 'تم إنشاء حساب المدير بنجاح',
-            );
+            // Show success message only once when authenticated
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'تم تسجيل الدخول بنجاح',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            });
             Navigator.pushReplacementNamed(context, '/admin-login');
           } else if (state is AdminError) {
             ProfessionalDialog.showError(
@@ -436,7 +445,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
