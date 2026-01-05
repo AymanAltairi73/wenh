@@ -46,12 +46,36 @@ service cloud.firestore {
         request.auth.token.admin == true;
     }
     
-    // Admin collection - Admin access only
-    match /admin/{adminId} {
+    // Admins collection - Admin access only
+    match /admins/{adminId} {
       // Only admin users can access admin data
       allow read, write: if 
         request.auth != null && 
         request.auth.token.admin == true;
+    }
+    
+    // Favorites collection - User access only
+    match /favorites/{favoriteId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Drafts collection - User access only
+    match /drafts/{draftId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Notifications collection - User access only
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Users collection - User access only
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == userId;
     }
   }
 }

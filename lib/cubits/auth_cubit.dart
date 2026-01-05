@@ -14,6 +14,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   final FirebaseAuthService _authService = FirebaseAuthService();
   final AuthStorageService _storageService = AuthStorageService();
+  final FirestoreService _firestoreService = FirestoreService();
   WorkerModel? current;
 
   /// Check authentication state on app startup
@@ -37,6 +38,7 @@ class AuthCubit extends Cubit<AuthState> {
             if (doc.exists) {
               final worker = WorkerModel.fromMap(doc.data()!);
               current = worker;
+              _firestoreService.setCurrentUserId(worker.uid); // Set in FirestoreService
               emit(Authenticated(worker));
               return;
             }
@@ -124,6 +126,7 @@ class AuthCubit extends Cubit<AuthState> {
       
       if (worker != null) {
         current = worker;
+        _firestoreService.setCurrentUserId(worker.uid); // Set in FirestoreService
 
         // Save Remember Me preference
         await _storageService.setRememberMe(
@@ -185,6 +188,7 @@ class AuthCubit extends Cubit<AuthState> {
     await _authService.logout();
     await _storageService.clearAll(); // Clear Remember Me preference
     current = null;
+    _firestoreService.clearCurrentUserId(); // Clear from FirestoreService
     emit(const AuthInitial());
   }
 }

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/admin_model.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/auth_storage_service.dart';
+import '../services/firestore_service.dart';
 import 'admin_state.dart';
 
 class AdminCubit extends Cubit<AdminState> {
@@ -12,7 +13,9 @@ class AdminCubit extends Cubit<AdminState> {
 
   final FirebaseAuthService _authService = FirebaseAuthService();
   final AuthStorageService _storageService = AuthStorageService();
+  final FirestoreService _firestoreService = FirestoreService();
   AdminModel? currentAdmin;
+  String? currentUserId;
 
   /// Check admin auth state on startup
   Future<void> checkAuthState() async {
@@ -32,6 +35,8 @@ class AdminCubit extends Cubit<AdminState> {
           final admin = AdminModel.fromJson(doc.data()!);
           if (admin.isActive) {
             currentAdmin = admin;
+            currentUserId = admin.id; // Set currentUserId for FirestoreService
+            _firestoreService.setCurrentUserId(admin.id); // Set in FirestoreService
             emit(AdminAuthenticated(admin));
             return;
           }
@@ -64,6 +69,8 @@ class AdminCubit extends Cubit<AdminState> {
       
       if (admin != null && admin.isActive) {
         currentAdmin = admin;
+        currentUserId = admin.id; // Set currentUserId for FirestoreService
+        _firestoreService.setCurrentUserId(admin.id); // Set in FirestoreService
 
         // Save Remember Me preference
         await _storageService.setRememberMe(
@@ -118,6 +125,8 @@ class AdminCubit extends Cubit<AdminState> {
     await _authService.logout();
     await _storageService.clearAll();
     currentAdmin = null;
+    currentUserId = null;
+    _firestoreService.clearCurrentUserId(); // Clear from FirestoreService
     emit(const AdminInitial());
   }
 }
