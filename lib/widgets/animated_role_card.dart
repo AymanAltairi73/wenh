@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 /// Animated role selection card with glassmorphic design
 class AnimatedRoleCard extends StatefulWidget {
   final String title;
-  final String subtitle;
+  // final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
   final Gradient gradient;
@@ -15,7 +15,7 @@ class AnimatedRoleCard extends StatefulWidget {
   const AnimatedRoleCard({
     super.key,
     required this.title,
-    required this.subtitle,
+    // required this.subtitle,
     required this.icon,
     required this.onTap,
     required this.gradient,
@@ -139,15 +139,15 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard> {
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                      height: 1.5,
-                    ),
-                  ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   widget.subtitle,
+                  //   style: TextStyle(
+                  //     fontSize: 14,
+                  //     color: Colors.white.withOpacity(0.9),
+                  //     height: 1.5,
+                  //   ),
+                  // ),
                   const SizedBox(height: 16),
                   Row(
                     children: [

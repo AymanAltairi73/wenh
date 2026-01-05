@@ -114,7 +114,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   // Customer Card
                   AnimatedRoleCard(
                     title: 'زبون',
-                    subtitle: 'أنشئ طلب خدمة بدون الحاجة إلى حساب واحصل على المساعدة من العمال المهرة.',
+                    //subtitle: 'أنشئ طلب خدمة بدون الحاجة إلى حساب واحصل على المساعدة من العمال المهرة.',
                     icon: Icons.person_outline,
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -133,7 +133,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   // Worker Card
                   AnimatedRoleCard(
                     title: 'عامل',
-                    subtitle: 'سجّل دخولك للاطلاع على طلبات الزبائن واستلامها وتقديم خدماتك المهنية.',
+                    //subtitle: 'سجّل دخولك للاطلاع على طلبات الزبائن واستلامها وتقديم خدماتك المهنية.',
                     icon: Icons.build_circle_outlined,
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -152,14 +152,14 @@ class RoleSelectionScreen extends StatelessWidget {
                   // Admin Card
                   AnimatedRoleCard(
                     title: 'مدير النظام',
-                    subtitle: 'سجّل دخولك لإدارة النظام والطلبات والمستخدمين بصلاحيات كاملة.',
+                    //subtitle: 'سجّل دخولك لإدارة النظام والطلبات والمستخدمين بصلاحيات كاملة.',
                     icon: Icons.admin_panel_settings_outlined,
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
                         AppColors.accent,
-                        AppColors.accentLight,
+                        AppColors.cardDark,
                       ],
                     ),
                     onTap: () => Navigator.pushNamed(context, '/admin-login'),
