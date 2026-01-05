@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import 'package:wenh/screens/request_preview_screen.dart';
-import 'package:wenh/services/draft_service.dart';
-import 'package:wenh/models/request_draft_model.dart';
 import 'package:wenh/widgets/custom_button.dart';
 
 class SendRequestScreen extends StatefulWidget {
@@ -16,9 +13,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _budgetController = TextEditingController();
-  final _draftService = DraftService();
   
-  late String _draftId;
   String? _selectedCategory;
   String? _selectedSubType;
   String? _selectedArea;
@@ -158,69 +153,12 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   @override
   void initState() {
     super.initState();
-    _draftId = const Uuid().v4();
-    _initDraftService();
     _initializeFilters();
-  }
-
-  Future<void> _initDraftService() async {
-    try {
-      await _draftService.init();
-      _loadDraft();
-    } catch (e, stackTrace) {
-      debugPrint('[SendRequestScreen] _initDraftService error: $e');
-      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
-    }
   }
 
   void _initializeFilters() {
     _filteredCategories = _serviceCategories.keys.toList();
     _filteredAreas = _areas;
-  }
-
-  Future<void> _loadDraft() async {
-    try {
-      final draft = await _draftService.getDraft(_draftId);
-      if (draft != null && !draft.isEmpty) {
-        setState(() {
-          _selectedCategory = draft.category;
-          _selectedSubType = draft.subType;
-          _selectedArea = draft.area;
-          _descriptionController.text = draft.description ?? '';
-          _selectedPriority = draft.priority ?? 'normal';
-          if (draft.budget != null) {
-            _budgetController.text = draft.budget.toString();
-          }
-          _selectedTime = draft.preferredTime;
-        });
-      }
-    } catch (e, stackTrace) {
-      debugPrint('[SendRequestScreen] _loadDraft error: $e');
-      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
-    }
-  }
-
-  Future<void> _saveDraft() async {
-    try {
-      final draft = RequestDraftModel(
-        id: _draftId,
-        category: _selectedCategory,
-        subType: _selectedSubType,
-        area: _selectedArea,
-        description: _descriptionController.text,
-        priority: _selectedPriority,
-        budget: _budgetController.text.isEmpty
-            ? null
-            : double.tryParse(_budgetController.text),
-        preferredTime: _selectedTime,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      await _draftService.saveDraft(draft);
-    } catch (e, stackTrace) {
-      debugPrint('[SendRequestScreen] _saveDraft error: $e');
-      debugPrint('[SendRequestScreen] stackTrace: $stackTrace');
-    }
   }
 
   void _filterCategories(String query) {
@@ -248,7 +186,6 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
 
   void _goToPreview() {
     if (_formKey.currentState?.validate() ?? false) {
-      _saveDraft();
       Navigator.push(
         context,
         MaterialPageRoute(

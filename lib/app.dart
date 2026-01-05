@@ -21,7 +21,6 @@ import 'screens/admin_register_screen.dart';
 import 'screens/enhanced_admin_dashboard.dart';
 import 'screens/enhanced_admin_profile.dart';
 import 'screens/admin_management_screen.dart';
-import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/customer_profile_screen.dart';
 import 'screens/worker_profile_screen.dart';
@@ -85,7 +84,6 @@ class _AppState extends State<App> {
               '/customer': (_) => const FixedCustomerHomeScreen(),
               '/send': (_) => const SendRequestScreen(),
               '/login': (_) => const WorkerLoginScreen(),
-              '/register': (_) => const RegisterScreen(),
               '/worker': (_) => const EnhancedWorkerRequestsScreen(),
               '/admin': (_) => const EnhancedAdminDashboard(),
               '/admin-login': (_) => const AdminLoginScreen(),
