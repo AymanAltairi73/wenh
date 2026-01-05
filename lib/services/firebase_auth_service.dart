@@ -10,7 +10,11 @@ class FirebaseAuthService {
   User? get currentUser => _auth.currentUser;
 
   /// Verify phone number and send OTP
-  Future<void> verifyPhoneNumber(String phoneNumber, Function(String) onCodeSent, Function(FirebaseAuthException) onError) async {
+  Future<void> verifyPhoneNumber(
+    String phoneNumber,
+    Function(String) onCodeSent,
+    Function(FirebaseAuthException) onError,
+  ) async {
     try {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -41,7 +45,9 @@ class FirebaseAuthService {
           .get();
 
       if (workersSnapshot.docs.isEmpty) {
-        throw Exception('هذا الرقم غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.');
+        throw Exception(
+          'هذا الرقم غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.',
+        );
       }
 
       final workerDoc = workersSnapshot.docs.first;
@@ -91,7 +97,9 @@ class FirebaseAuthService {
           .get();
 
       if (adminsSnapshot.docs.isEmpty) {
-        throw Exception('هذا الرقم غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.');
+        throw Exception(
+          'هذا الرقم غير مسجل كمدير. يرجى إنشاء حساب مدير أولاً.',
+        );
       }
 
       final adminDoc = adminsSnapshot.docs.first;
@@ -106,6 +114,11 @@ class FirebaseAuthService {
       // We'll use the admin's UID as the session identifier
       final adminUid = adminDoc.id;
 
+      // Ensure Firebase Auth session exists (for Firestore security rules)
+      if (_auth.currentUser == null) {
+        await _auth.signInAnonymously();
+      }
+
       // Update last login
       await _firestore.collection('admins').doc(adminUid).update({
         'lastLogin': FieldValue.serverTimestamp(),
@@ -118,7 +131,8 @@ class FirebaseAuthService {
         phone: data['phone'] ?? phoneNumber,
         role: AdminRole.admin, // Default role
         isActive: data['isActive'] ?? true,
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        createdAt:
+            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         permissions: Map<String, bool>.from(data['permissions'] ?? {}),
       );
     } catch (e) {
@@ -209,10 +223,7 @@ class FirebaseAuthService {
     }
   }
 
-
   Future<void> logout() async {
     await _auth.signOut();
   }
-
-
 }

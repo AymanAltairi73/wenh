@@ -55,23 +55,34 @@ class AdminCubit extends Cubit<AdminState> {
       final currentUser = FirebaseAuth.instance.currentUser;
       final userType = await _storageService.getUserType();
 
-      if (shouldAutoLogin && currentUser != null && userType == 'admin') {
-        // Fetch admin data from Firestore
-        final doc = await FirebaseFirestore.instance
-            .collection('admins')
-            .doc(currentUser.uid)
-            .get();
+      if (shouldAutoLogin && userType == 'admin') {
+        final savedPhone = await _storageService
+            .getUserEmail(); // Reads stored phone
 
-        if (doc.exists) {
-          final admin = AdminModel.fromJson(doc.data()!);
-          if (admin.isActive) {
-            currentAdmin = admin;
-            currentUserId = admin.id; // Set currentUserId for FirestoreService
-            _firestoreService.setCurrentUserId(
-              admin.id,
-            ); // Set in FirestoreService
-            emit(AdminAuthenticated(admin));
-            return;
+        if (savedPhone != null) {
+          // 1. Ensure Firebase Auth session exists for RLS
+          if (FirebaseAuth.instance.currentUser == null) {
+            await FirebaseAuth.instance.signInAnonymously();
+          }
+
+          // 2. Fetch admin data by PHONE, not by anonymous UID
+          final snapshot = await FirebaseFirestore.instance
+              .collection('admins')
+              .where('phone', isEqualTo: savedPhone)
+              .limit(1)
+              .get();
+
+          if (snapshot.docs.isNotEmpty) {
+            final doc = snapshot.docs.first;
+            final admin = AdminModel.fromJson(doc.data());
+
+            if (admin.isActive) {
+              currentAdmin = admin;
+              currentUserId = admin.id;
+              _firestoreService.setCurrentUserId(admin.id);
+              emit(AdminAuthenticated(admin));
+              return;
+            }
           }
         }
       }
