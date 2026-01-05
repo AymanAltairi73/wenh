@@ -209,36 +209,36 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
 
           const SizedBox(height: 24),
 
-          // How it works
-          const Text(
-            'كيف يعمل التطبيق؟',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
+          // // How it works
+          // const Text(
+          //   'كيف يعمل التطبيق؟',
+          //   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          // ),
+          // const SizedBox(height: 16),
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _buildStep('1', 'اطلب خدمة', 'اختر الخدمة التي تحتاجها'),
-                _buildStep('2', 'استلم العامل', 'سيتم تخصيص عامل مؤهل'),
-                _buildStep('3', 'استلم الخدمة', 'احصل على الخدمة بجودة عالية'),
-              ],
-            ),
-          ),
+          // Container(
+          //   padding: const EdgeInsets.all(16),
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     borderRadius: BorderRadius.circular(12),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.black.withOpacity(0.05),
+          //         blurRadius: 10,
+          //         offset: const Offset(0, 2),
+          //       ),
+          //     ],
+          //   ),
+          //   child: Column(
+          //     children: [
+          //       _buildStep('1', 'اطلب خدمة', 'اختر الخدمة التي تحتاجها'),
+          //       _buildStep('2', 'استلم العامل', 'سيتم تخصيص عامل مؤهل'),
+          //       _buildStep('3', 'استلم الخدمة', 'احصل على الخدمة بجودة عالية'),
+          //     ],
+          //   ),
+          // ),
 
-          const SizedBox(height: 80),
+          // const SizedBox(height: 80),
         ],
       ),
     );
@@ -513,54 +513,6 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
     );
   }
 
-  Widget _buildStep(String number, String title, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRequestCard(RequestModel request) {
     return Container(

@@ -152,30 +152,30 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                         
                         const SizedBox(height: 24),
                         
-                        // Login Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'لديك حساب بالفعل؟',
-                              style: TextStyle(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pushNamed(context, '/admin-login'),
-                              child: Text(
-                                'تسجيل الدخول',
-                                style: TextStyle(
-                                  color: AppColors.secondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // // Login Link
+                        // Row(
+                        //   mainAxisAlignment: MainAxisAlignment.center,
+                        //   children: [
+                        //     Text(
+                        //       'لديك حساب بالفعل؟',
+                        //       style: TextStyle(
+                        //         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        //       ),
+                        //     ),
+                        //     TextButton(
+                        //       onPressed: () => Navigator.pushNamed(context, '/admin-login'),
+                        //       child: Text(
+                        //         'تسجيل الدخول',
+                        //         style: TextStyle(
+                        //           color: AppColors.secondary,
+                        //           fontWeight: FontWeight.bold,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         
-                        const SizedBox(height: 40),
+                        // const SizedBox(height: 40),
                       ],
                     ),
                   ),
