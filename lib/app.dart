@@ -52,7 +52,9 @@ class _AppState extends State<App> {
           create: (_) => RequestCubit(firestoreService: _firestoreService),
         ),
         BlocProvider(create: (_) => AuthCubit()),
-        BlocProvider(create: (_) => AdminCubit()),
+        BlocProvider(
+          create: (_) => AdminCubit(firestoreService: _firestoreService),
+        ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {

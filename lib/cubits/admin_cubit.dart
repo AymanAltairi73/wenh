@@ -11,11 +11,14 @@ import '../core/theme/app_colors.dart';
 import 'admin_state.dart';
 
 class AdminCubit extends Cubit<AdminState> {
-  AdminCubit() : super(const AdminInitial());
+  final FirestoreService _firestoreService;
+
+  AdminCubit({FirestoreService? firestoreService})
+    : _firestoreService = firestoreService ?? FirestoreService(),
+      super(const AdminInitial());
 
   final FirebaseAuthService _authService = FirebaseAuthService();
   final AuthStorageService _storageService = AuthStorageService();
-  final FirestoreService _firestoreService = FirestoreService();
   AdminModel? currentAdmin;
   String? currentUserId;
 
@@ -30,7 +33,7 @@ class AdminCubit extends Cubit<AdminState> {
   /// Show success message for admin authentication (login or registration)
   void showAuthSuccess(BuildContext context) {
     if (_hasShownSuccessMessage) return; // Prevent duplicate messages
-    
+
     _hasShownSuccessMessage = true;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -64,7 +67,9 @@ class AdminCubit extends Cubit<AdminState> {
           if (admin.isActive) {
             currentAdmin = admin;
             currentUserId = admin.id; // Set currentUserId for FirestoreService
-            _firestoreService.setCurrentUserId(admin.id); // Set in FirestoreService
+            _firestoreService.setCurrentUserId(
+              admin.id,
+            ); // Set in FirestoreService
             emit(AdminAuthenticated(admin));
             return;
           }
@@ -90,11 +95,8 @@ class AdminCubit extends Cubit<AdminState> {
         await FirebaseAuth.instance.signOut();
       }
 
-      final admin = await _authService.loginAdmin(
-        phoneNumber,
-        password,
-      );
-      
+      final admin = await _authService.loginAdmin(phoneNumber, password);
+
       if (admin != null && admin.isActive) {
         currentAdmin = admin;
         currentUserId = admin.id; // Set currentUserId for FirestoreService
@@ -136,10 +138,9 @@ class AdminCubit extends Cubit<AdminState> {
         password: password,
         name: name,
       );
-      
+
       // Auto-login after registration
       await loginWithPhone(phoneNumber, password);
-      
     } catch (e, stackTrace) {
       debugPrint('[AdminCubit] registerWithPhone error: $e');
       debugPrint('[AdminCubit] stackTrace: $stackTrace');
@@ -147,7 +148,6 @@ class AdminCubit extends Cubit<AdminState> {
       emit(const AdminInitial());
     }
   }
-
 
   Future<void> logout() async {
     await _authService.logout();

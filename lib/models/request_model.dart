@@ -31,7 +31,11 @@ class RequestModel extends Equatable {
       description: data['description'] ?? '',
       status: data['status'] ?? 'new',
       takenBy: data['takenBy'],
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : data['timestamp'] != null
+          ? (data['timestamp'] as Timestamp).toDate()
+          : DateTime.now(),
       createdBy: data['createdBy'] ?? 'anonymous',
     );
   }
@@ -71,5 +75,14 @@ class RequestModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, type, area, description, status, takenBy, timestamp, createdBy];
+  List<Object?> get props => [
+    id,
+    type,
+    area,
+    description,
+    status,
+    takenBy,
+    timestamp,
+    createdBy,
+  ];
 }
