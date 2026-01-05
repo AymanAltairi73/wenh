@@ -26,6 +26,15 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   String _selectedCountryCode = '+966'; // Default Saudi Arabia
 
   @override
+  void initState() {
+    super.initState();
+    // Reset success message flag when entering registration screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminCubit>().resetSuccessMessageFlag();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -51,19 +60,16 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           if (state is AdminAuthenticated) {
             // Show success message only once when authenticated
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'تم تسجيل الدخول بنجاح',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppColors.success,
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              // Show success message using the cubit method
+              context.read<AdminCubit>().showAuthSuccess(context);
+              
+              // Navigate to admin home screen after showing message
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/admin');
+                }
+              });
             });
-            Navigator.pushReplacementNamed(context, '/admin-login');
           } else if (state is AdminError) {
             ProfessionalDialog.showError(
               context: context,

@@ -646,20 +646,23 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               color: isActive ? AppColors.primary : Colors.grey,
-              size: 24,
+              size: 22, // Reduced from 24 to fit better
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2), // Reduced from 4
             Text(
               label,
               style: TextStyle(
                 color: isActive ? AppColors.primary : Colors.grey,
-                fontSize: 12,
+                fontSize: 11, // Reduced from 12
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

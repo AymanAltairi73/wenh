@@ -216,7 +216,17 @@ class _EnhancedWorkerRequestsScreenState
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        // Show success message when user reaches home screen after authentication
+        if (state is Authenticated) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Show success message if it hasn't been shown yet
+            context.read<AuthCubit>().showAuthSuccess(context);
+          });
+        }
+      },
+      child: Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('طلبات العامل'),
@@ -532,6 +542,7 @@ class _EnhancedWorkerRequestsScreenState
             ],
           ),
         ),
+      ),
       ),
     );
   }

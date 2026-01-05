@@ -16,6 +16,9 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthStorageService _storageService = AuthStorageService();
   final FirestoreService _firestoreService = FirestoreService();
   WorkerModel? current;
+  
+  // Track if success message has been shown to prevent duplicates
+  bool _hasShownSuccessMessage = false;
 
   /// Check authentication state on app startup
   Future<void> checkAuthState() async {
@@ -55,29 +58,20 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Show success message for login
-  void _showLoginSuccess(BuildContext context, String userType) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          userType == 'worker' 
-            ? 'تم تسجيل الدخول بنجاح'
-            : 'تم تسجيل الدخول بنجاح',
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: AppColors.success,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  /// Reset success message flag (call when navigating to login screens)
+  void resetSuccessMessageFlag() {
+    _hasShownSuccessMessage = false;
   }
 
-  /// Show success message for registration
-  void _showRegistrationSuccess(BuildContext context) {
+  /// Show success message for authentication (login or registration)
+  void showAuthSuccess(BuildContext context) {
+    if (_hasShownSuccessMessage) return; // Prevent duplicate messages
+    
+    _hasShownSuccessMessage = true;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text(
-          'تم إنشاء الحساب بنجاح',
+          'تم تسجيل الدخول بنجاح',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: AppColors.success,
@@ -135,9 +129,7 @@ class AuthCubit extends Cubit<AuthState> {
           email: phoneNumber, // Store phone number instead of email
         );
 
-        // Show success message after successful authentication
-        _showLoginSuccess(context, 'worker');
-
+        // Success message will be shown by the BlocListener in the UI
         emit(Authenticated(worker));
       } else {
         emit(const AuthError('فشل تسجيل الدخول'));
@@ -172,8 +164,7 @@ class AuthCubit extends Cubit<AuthState> {
       // Auto-login after registration
       await loginWithPhone(phoneNumber, password, context: context);
       
-      // Show registration success message
-      _showRegistrationSuccess(context);
+      // Success message will be shown by the BlocListener in the UI
       
     } catch (e, stackTrace) {
       debugPrint('[AuthCubit] registerWithPhone error: $e');

@@ -13,25 +13,26 @@ class AdminLoginScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Reset success message flag when entering login screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminCubit>().resetSuccessMessageFlag();
+    });
+
     return Scaffold(
       body: BlocListener<AdminCubit, AdminState>(
         listener: (context, state) {
           if (state is AdminAuthenticated) {
             // Show success message only once when authenticated
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'تم تسجيل الدخول بنجاح',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppColors.success,
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              // Navigate to admin home screen
-              Navigator.pushReplacementNamed(context, '/admin');
+              // Show success message using the cubit method
+              context.read<AdminCubit>().showAuthSuccess(context);
+              
+              // Navigate to admin home screen after showing message
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/admin');
+                }
+              });
             });
           }
         },

@@ -24,6 +24,15 @@ class _WorkerRegisterScreenState extends State<WorkerRegisterScreen> {
   String _selectedCountryCode = '+966'; // Default Saudi Arabia
 
   @override
+  void initState() {
+    super.initState();
+    // Reset success message flag when entering registration screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthCubit>().resetSuccessMessageFlag();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -43,19 +52,16 @@ class _WorkerRegisterScreenState extends State<WorkerRegisterScreen> {
           if (state is Authenticated) {
             // Show success message only once when authenticated
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'تم إنشاء الحساب بنجاح',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppColors.success,
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              // Show success message using the cubit method
+              context.read<AuthCubit>().showAuthSuccess(context);
+              
+              // Navigate to worker home screen after showing message
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/worker');
+                }
+              });
             });
-            Navigator.pushReplacementNamed(context, '/worker');
           } else if (state is AuthError) {
             ProfessionalDialog.showError(
               context: context,
@@ -139,29 +145,29 @@ class _WorkerRegisterScreenState extends State<WorkerRegisterScreen> {
                         const SizedBox(height: 24),
                         
                         // Login Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'لديك حساب بالفعل؟',
-                              style: TextStyle(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pushNamed(context, '/login'),
-                              child: Text(
-                                'تسجيل الدخول',
-                                style: TextStyle(
-                                  color: AppColors.secondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Row(
+                        //   mainAxisAlignment: MainAxisAlignment.center,
+                        //   children: [
+                        //     Text(
+                        //       'لديك حساب بالفعل؟',
+                        //       style: TextStyle(
+                        //         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        //       ),
+                        //     ),
+                        //     TextButton(
+                        //       onPressed: () => Navigator.pushNamed(context, '/login'),
+                        //       child: Text(
+                        //         'تسجيل الدخول',
+                        //         style: TextStyle(
+                        //           color: AppColors.secondary,
+                        //           fontWeight: FontWeight.bold,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         
-                        const SizedBox(height: 40),
+                        // const SizedBox(height: 40),
                       ],
                     ),
                   ),

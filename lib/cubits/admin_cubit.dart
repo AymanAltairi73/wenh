@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,7 @@ import '../models/admin_model.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/auth_storage_service.dart';
 import '../services/firestore_service.dart';
+import '../core/theme/app_colors.dart';
 import 'admin_state.dart';
 
 class AdminCubit extends Cubit<AdminState> {
@@ -16,6 +18,32 @@ class AdminCubit extends Cubit<AdminState> {
   final FirestoreService _firestoreService = FirestoreService();
   AdminModel? currentAdmin;
   String? currentUserId;
+
+  // Track if success message has been shown to prevent duplicates
+  bool _hasShownSuccessMessage = false;
+
+  /// Reset success message flag (call when navigating to login screens)
+  void resetSuccessMessageFlag() {
+    _hasShownSuccessMessage = false;
+  }
+
+  /// Show success message for admin authentication (login or registration)
+  void showAuthSuccess(BuildContext context) {
+    if (_hasShownSuccessMessage) return; // Prevent duplicate messages
+    
+    _hasShownSuccessMessage = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'تم تسجيل الدخول بنجاح',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppColors.success,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   /// Check admin auth state on startup
   Future<void> checkAuthState() async {

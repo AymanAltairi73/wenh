@@ -48,7 +48,17 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AdminCubit, AdminState>(
+      listener: (context, state) {
+        // Show success message when admin reaches home screen after authentication
+        if (state is AdminAuthenticated) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Show success message if it hasn't been shown yet
+            context.read<AdminCubit>().showAuthSuccess(context);
+          });
+        }
+      },
+      child: Scaffold(
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
@@ -75,6 +85,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
         icon: const Icon(AppIcons.admin),
         label: const Text('إدارة المديرين'),
         backgroundColor: AppColors.primary,
+      ),
       ),
     );
   }

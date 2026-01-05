@@ -13,25 +13,26 @@ class WorkerLoginScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Reset success message flag when entering login screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthCubit>().resetSuccessMessageFlag();
+    });
+
     return Scaffold(
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
             // Show success message only once when authenticated
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'تم تسجيل الدخول بنجاح',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppColors.success,
-                  duration: const Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              // Navigate to worker home screen
-              Navigator.pushReplacementNamed(context, '/worker');
+              // Show success message using the cubit method
+              context.read<AuthCubit>().showAuthSuccess(context);
+              
+              // Navigate to worker home screen after showing message
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, '/worker');
+                }
+              });
             });
           }
         },
