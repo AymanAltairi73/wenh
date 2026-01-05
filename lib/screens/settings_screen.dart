@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:wenh/cubits/theme_cubit.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_card.dart';
@@ -88,10 +87,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
-                  .animate()
-                  .fadeIn(duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 600.ms),
+              ),
               
               const SizedBox(height: 20),
               
@@ -132,10 +128,7 @@ class SettingsScreen extends StatelessWidget {
                     _buildInfoRow('المطور', 'Wenh Team'),
                   ],
                 ),
-              )
-                  .animate(delay: 200.ms)
-                  .fadeIn(duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 600.ms),
+              ),
               
               const SizedBox(height: 20),
               
@@ -200,10 +193,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
-                  .animate(delay: 400.ms)
-                  .fadeIn(duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 600.ms),
+              ),
             ],
           ),
         ),

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/app_colors.dart';
 
 /// Modern glassmorphic search bar with animations
@@ -91,18 +90,7 @@ class _GlassmorphicSearchBarState extends State<GlassmorphicSearchBar> {
                   color: _isFocused
                       ? (isDark ? AppColors.accentLight : AppColors.primary)
                       : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
-                )
-                    .animate(target: _isFocused ? 1 : 0)
-                    .scale(
-                      begin: const Offset(1, 1),
-                      end: const Offset(1.1, 1.1),
-                      duration: 200.ms,
-                    )
-                    .then()
-                    .shimmer(
-                      duration: 1500.ms,
-                      color: (isDark ? AppColors.accentLight : AppColors.primary).withOpacity(0.3),
-                    ),
+                ),
                 suffixIcon: widget.controller.text.isNotEmpty
                     ? IconButton(
                         icon: Icon(
@@ -115,13 +103,6 @@ class _GlassmorphicSearchBarState extends State<GlassmorphicSearchBar> {
                           widget.onChanged?.call('');
                         },
                       )
-                          .animate()
-                          .fadeIn(duration: 200.ms)
-                          .scale(
-                            begin: const Offset(0.8, 0.8),
-                            end: const Offset(1, 1),
-                            duration: 200.ms,
-                          )
                     : null,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,

@@ -4,6 +4,7 @@ import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
 import 'package:wenh/cubits/auth_cubit.dart';
 import 'package:wenh/cubits/auth_state.dart';
+import 'package:wenh/cubits/worker_request_cubit.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/models/request_filter_model.dart';
 import 'package:wenh/services/filter_service.dart';
@@ -11,7 +12,6 @@ import 'package:wenh/services/location_service.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
-import 'package:wenh/utils/quick_worker_fix.dart';
 
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
@@ -24,7 +24,6 @@ class EnhancedWorkerRequestsScreen extends StatefulWidget {
 class _EnhancedWorkerRequestsScreenState
     extends State<EnhancedWorkerRequestsScreen> {
   final FilterService _filterService = FilterService();
-  final QuickWorkerFix _quickWorkerFix = QuickWorkerFix();
   final TextEditingController _searchController = TextEditingController();
   RequestFilterModel _currentFilter = const RequestFilterModel();
   bool _showMap = false;
@@ -44,8 +43,7 @@ class _EnhancedWorkerRequestsScreenState
       debugPrint('[EnhancedWorkerRequestsScreen] Auth state: ${authState.runtimeType}');
       
       if (authState is Authenticated) {
-        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated, setting custom user ID...');
-        _quickWorkerFix.setCustomUserId(authState.user.uid);
+        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}');
         
         // Add small delay to ensure currentUserId is set before fetching requests
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -65,13 +63,12 @@ class _EnhancedWorkerRequestsScreenState
       // Check authentication first
       final authState = context.read<AuthCubit>().state;
       if (authState is Authenticated) {
-        _quickWorkerFix.setCustomUserId(authState.user.uid);
-        debugPrint('[EnhancedWorkerRequestsScreen] Set custom user ID: ${authState.user.uid}');
+        debugPrint('[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}');
+        // Worker is authenticated, no need for custom fixes
       } else {
-        debugPrint('[EnhancedWorkerRequestsScreen] User not authenticated, cannot set custom user ID');
+        debugPrint('[EnhancedWorkerRequestsScreen] User not authenticated');
       }
       
-      await _quickWorkerFix.quickFix();
       debugPrint('[EnhancedWorkerRequestsScreen] Worker access initialized successfully');
     } catch (e) {
       debugPrint('[EnhancedWorkerRequestsScreen] Error initializing worker: $e');
@@ -577,8 +574,8 @@ class _EnhancedWorkerRequestsScreenState
                   userName: userName,
                   onTakeRequest: (requestId, userName) async {
                     try {
-                      final quickFix = QuickWorkerFix();
-                      await quickFix.takeRequest(requestId);
+                      // Use WorkerRequestCubit to take request
+                      context.read<WorkerRequestCubit>().takeRequest(requestId);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('تم استلام الطلب بنجاح'),

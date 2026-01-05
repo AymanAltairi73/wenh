@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:wenh/widgets/theme_toggle.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
@@ -16,12 +15,7 @@ class RoleSelectionScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text('اختيار الدور'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ThemeToggle(),
-          ),
-        ],
+        actions: const [],
       ),
       body: Container(
         decoration: BoxDecoration(

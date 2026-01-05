@@ -6,7 +6,6 @@ import 'package:wenh/cubits/auth_cubit.dart';
 import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
-import 'package:wenh/widgets/modern_bottom_nav.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 
 /// Fixed Customer Home Screen - No Permission Issues
@@ -61,35 +60,20 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
         ),
         child: _buildBody(),
       ),
-      bottomNavigationBar: ModernBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home,
-            label: 'الرئيسية',
-          ),
-          BottomNavItem(
-            icon: Icons.list_alt_outlined,
-            activeIcon: Icons.list_alt,
-            label: 'طلباتي',
-          ),
-          BottomNavItem(
-            icon: Icons.grid_view_outlined,
-            activeIcon: Icons.grid_view,
-            label: 'الخدمات',
-          ),
-          BottomNavItem(
-            icon: Icons.menu_outlined,
-            activeIcon: Icons.menu,
-            label: 'المزيد',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          boxShadow: [AppColors.cardShadowLight],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(Icons.home, 'الرئيسية', 0),
+            _buildNavItem(Icons.add_circle, 'طلب جديد', 1),
+            _buildNavItem(Icons.person, 'الملف', 2),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/send'),
@@ -642,6 +626,43 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isActive = _currentIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isActive ? AppColors.primary : Colors.grey,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? AppColors.primary : Colors.grey,
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
