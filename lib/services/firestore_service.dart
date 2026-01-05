@@ -165,17 +165,16 @@ class FirestoreService {
         '[$operationId] [AUTH] Firebase: $hasFirebaseAuth, Custom: $hasCustomAuth, CurrentUserId: $currentUserId',
       );
 
+      // Allow anonymous request creation
       if (!hasFirebaseAuth && !hasCustomAuth) {
-        final error = 'يجب تسجيل الدخول لإنشاء طلب';
-        debugPrint('[$operationId] [ERROR] Authentication failed: $error');
-        throw Exception(error);
+        debugPrint('[$operationId] [AUTH] Creating anonymous request');
       }
 
       // Create request with additional security fields
       final requestData = request.toFirestore();
       requestData['createdBy'] = hasFirebaseAuth
           ? _auth.currentUser!.uid
-          : currentUserId;
+          : (hasCustomAuth ? currentUserId : 'anonymous');
       requestData['createdAt'] = FieldValue.serverTimestamp();
       requestData['status'] = 'new';
 

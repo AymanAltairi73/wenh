@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
-import 'package:wenh/cubits/auth_cubit.dart';
-import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
@@ -13,7 +11,8 @@ class FixedCustomerHomeScreen extends StatefulWidget {
   const FixedCustomerHomeScreen({super.key});
 
   @override
-  State<FixedCustomerHomeScreen> createState() => _FixedCustomerHomeScreenState();
+  State<FixedCustomerHomeScreen> createState() =>
+      _FixedCustomerHomeScreenState();
 }
 
 class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
@@ -113,11 +112,11 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.blueGrey,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black12,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -137,10 +136,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'منصة الخدمات المنزلية الموثوقة',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ],
             ),
@@ -198,7 +194,11 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
             crossAxisSpacing: 16,
             childAspectRatio: 1.2,
             children: [
-              _buildServiceCard('كهرباء', Icons.electrical_services, Colors.blue),
+              _buildServiceCard(
+                'كهرباء',
+                Icons.electrical_services,
+                Colors.blue,
+              ),
               _buildServiceCard('سباكة', Icons.plumbing, Colors.cyan),
               _buildServiceCard('تكييف', Icons.ac_unit, Colors.lightBlue),
               _buildServiceCard('دهان', Icons.format_paint, Colors.orange),
@@ -245,112 +245,92 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
   }
 
   Widget _buildMyRequestsTab() {
-    return BlocBuilder<AuthCubit, AuthState>(
-      builder: (context, authState) {
-        if (authState is! Authenticated) {
+    // Trigger fetch if needed (optional, but good practice if not done elsewhere)
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   context.read<RequestCubit>().getRequests();
+    // });
+
+    return BlocBuilder<RequestCubit, RequestState>(
+      builder: (context, state) {
+        if (state is RequestLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is RequestError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.login_outlined, size: 64, color: Colors.grey.shade400),
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
-                  'يرجى تسجيل الدخول لعرض طلباتك',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  'حدث خطأ في تحميل الطلبات',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.message, // Show actual error for debugging
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register', arguments: 'customer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('تسجيل الدخول'),
+                  onPressed: () {
+                    context.read<RequestCubit>().getRequests();
+                  },
+                  child: const Text('إعادة المحاولة'),
                 ),
               ],
             ),
           );
         }
 
-        return BlocBuilder<RequestCubit, RequestState>(
-          builder: (context, state) {
-            if (state is RequestLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        if (state is RequestLoaded) {
+          final requests = state.requests;
 
-            if (state is RequestError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      'حدث خطأ في تحميل الطلبات',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<RequestCubit>().getRequests();
-                      },
-                      child: const Text('إعادة المحاولة'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (state is RequestLoaded) {
-              final requests = state.requests;
-
-              if (requests.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inbox, size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      Text(
-                        'لا توجد طلبات بعد',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.pushNamed(context, '/send'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('إنشاء طلب جديد'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
+          if (requests.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text(
+                    'لا توجد طلبات بعد',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
-                );
-              }
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/send'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('إنشاء طلب جديد'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: requests.length,
-                itemBuilder: (context, index) {
-                  final request = requests[index];
-                  return _buildRequestCard(request);
-                },
-              );
-            }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              final request = requests[index];
+              return _buildRequestCard(request);
+            },
+          );
+        }
 
-            return const Center(child: Text('لا توجد بيانات'));
-          },
+        // Initial state
+        return Center(
+          child: ElevatedButton(
+            onPressed: () {
+              context.read<RequestCubit>().getRequests();
+            },
+            child: const Text('عرض الطلبات'),
+          ),
         );
       },
     );
@@ -358,12 +338,20 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
 
   Widget _buildServicesTab() {
     final services = [
-      {'name': 'الكهرباء', 'icon': Icons.electrical_services, 'color': Colors.blue},
+      {
+        'name': 'الكهرباء',
+        'icon': Icons.electrical_services,
+        'color': Colors.blue,
+      },
       {'name': 'السباكة', 'icon': Icons.plumbing, 'color': Colors.cyan},
       {'name': 'التكييف', 'icon': Icons.ac_unit, 'color': Colors.lightBlue},
       {'name': 'الدهان', 'icon': Icons.format_paint, 'color': Colors.orange},
       {'name': 'النجارة', 'icon': Icons.carpenter, 'color': Colors.brown},
-      {'name': 'النظافة', 'icon': Icons.cleaning_services, 'color': Colors.green},
+      {
+        'name': 'النظافة',
+        'icon': Icons.cleaning_services,
+        'color': Colors.green,
+      },
     ];
 
     return GridView.builder(
@@ -429,7 +417,12 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -437,7 +430,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -464,13 +457,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
         ],
       ),
     );
@@ -483,7 +470,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -503,23 +490,19 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-
   Widget _buildRequestCard(RequestModel request) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.black38,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -556,10 +539,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
           const SizedBox(height: 8),
           Text(
             request.description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -570,10 +550,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
               const SizedBox(width: 4),
               Text(
                 request.area,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -593,7 +570,9 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          color: isActive
+              ? AppColors.primary.withOpacity(0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
