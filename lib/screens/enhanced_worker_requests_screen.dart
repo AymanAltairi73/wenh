@@ -51,7 +51,8 @@ class _EnhancedWorkerRequestsScreenState
           context.read<RequestCubit>().getRequests();
         });
       } else {
-        debugPrint('[EnhancedWorkerRequestsScreen] User is not authenticated, skipping request fetch');
+        debugPrint('[EnhancedWorkerRequestsScreen] Worker not authenticated, redirecting to login');
+        Navigator.pushReplacementNamed(context, '/login');
       }
     });
   }

@@ -26,6 +26,15 @@ service cloud.firestore {
     
     // Workers collection - Authenticated access only
     match /workers/{workerId} {
+      // Allow list queries for login purposes (any user can query by phone)
+      allow list: if true;
+      
+      // Allow updating lastLogin field after successful password verification
+      allow update: if 
+        request.auth == null && 
+        request.resource.data.keys().hasAll(['lastLogin']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
+      
       // Only authenticated users can read their own profile
       allow read: if request.auth != null && request.auth.uid == workerId;
       
@@ -48,13 +57,19 @@ service cloud.firestore {
     
     // Admins collection - Admin access only
     match /admins/{adminId} {
+      // Allow list queries for login purposes (any user can query by phone)
+      allow list: if true;
+      
+      // Allow updating lastLogin field after successful password verification
+      allow update: if 
+        request.auth == null && 
+        request.resource.data.keys().hasAll(['lastLogin']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
+      
       // Allow read for login (query by phone) and admin access
       allow read: if 
         request.auth != null && 
         (request.auth.token.admin == true || request.auth.uid == adminId);
-      
-      // Allow list queries for login purposes (any authenticated user can query by phone)
-      allow list: if request.auth != null;
       
       // Only admin users can write admin data
       allow write: if 

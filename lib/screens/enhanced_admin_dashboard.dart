@@ -31,13 +31,23 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    try {
-      debugPrint('[EnhancedAdminDashboard] Initializing and fetching requests');
-      context.read<RequestCubit>().getRequests();
-    } catch (e, stackTrace) {
-      debugPrint('[EnhancedAdminDashboard] initState error: $e');
-      debugPrint('[EnhancedAdminDashboard] stackTrace: $stackTrace');
-    }
+    
+    // Check if admin is authenticated before fetching requests
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final adminState = context.read<AdminCubit>().state;
+      if (adminState is AdminAuthenticated) {
+        try {
+          debugPrint('[EnhancedAdminDashboard] Admin authenticated, fetching requests');
+          context.read<RequestCubit>().getRequests();
+        } catch (e, stackTrace) {
+          debugPrint('[EnhancedAdminDashboard] getRequests error: $e');
+          debugPrint('[EnhancedAdminDashboard] stackTrace: $stackTrace');
+        }
+      } else {
+        debugPrint('[EnhancedAdminDashboard] Admin not authenticated, redirecting to login');
+        Navigator.pushReplacementNamed(context, '/admin-login');
+      }
+    });
   }
 
   @override
