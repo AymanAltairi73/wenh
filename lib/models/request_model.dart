@@ -6,8 +6,10 @@ class RequestModel extends Equatable {
   final String type;
   final String area;
   final String description;
-  final String status; // 'new' or 'taken'
+  final String status; // 'new', 'taken', 'completed'
   final String? takenBy;
+  final DateTime timestamp;
+  final String createdBy; // 'anonymous' or worker_id
 
   const RequestModel({
     required this.id,
@@ -16,6 +18,8 @@ class RequestModel extends Equatable {
     required this.description,
     required this.status,
     this.takenBy,
+    required this.timestamp,
+    this.createdBy = 'anonymous',
   });
 
   factory RequestModel.fromFirestore(DocumentSnapshot doc) {
@@ -27,6 +31,8 @@ class RequestModel extends Equatable {
       description: data['description'] ?? '',
       status: data['status'] ?? 'new',
       takenBy: data['takenBy'],
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      createdBy: data['createdBy'] ?? 'anonymous',
     );
   }
 
@@ -36,8 +42,8 @@ class RequestModel extends Equatable {
       'area': area,
       'description': description,
       'status': status,
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdBy': 'anonymous',
+      'timestamp': Timestamp.fromDate(timestamp),
+      'createdBy': createdBy,
       'takenBy': takenBy,
     };
   }
@@ -49,6 +55,8 @@ class RequestModel extends Equatable {
     String? description,
     String? status,
     String? takenBy,
+    DateTime? timestamp,
+    String? createdBy,
   }) {
     return RequestModel(
       id: id ?? this.id,
@@ -57,9 +65,11 @@ class RequestModel extends Equatable {
       description: description ?? this.description,
       status: status ?? this.status,
       takenBy: takenBy ?? this.takenBy,
+      timestamp: timestamp ?? this.timestamp,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
   @override
-  List<Object?> get props => [id, type, area, description, status, takenBy];
+  List<Object?> get props => [id, type, area, description, status, takenBy, timestamp, createdBy];
 }

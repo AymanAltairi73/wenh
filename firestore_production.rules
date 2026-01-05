@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Requests collection
+    match /requests/{requestId} {
+      // Anyone can read requests (for customers and workers)
+      allow read: if true;
+      
+      // Anyone can create requests (customers without registration)
+      allow create: if 
+        request.resource.data.keys().hasAll(['type', 'area', 'description']) &&
+        request.resource.data.type is string &&
+        request.resource.data.area is string &&
+        request.resource.data.description is string &&
+        request.resource.data.status == 'new' &&
+        request.resource.data.createdBy == 'anonymous';
+      
+      // Only authenticated workers can update requests (to take them)
+      allow update: if 
+        request.auth != null &&
+        request.auth.uid in get(/databases/$(database)/documents/workers/$(request.auth.uid)).data.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'takenBy']) &&
+        request.resource.data.status == 'taken' &&
+        request.resource.data.takenBy == request.auth.uid;
+    }
+    
+    // Workers collection
+    match /workers/{workerId} {
+      // Only authenticated users can read their own profile
+      allow read: if request.auth != null && request.auth.uid == workerId;
+      
+      // Only authenticated users can create their own profile
+      allow create: if 
+        request.auth != null && 
+        request.auth.uid == workerId &&
+        request.resource.data.keys().hasAll(['uid', 'name', 'email', 'phone', 'subscriptionPlan', 'subscriptionStart', 'subscriptionEnd']);
+      
+      // Only authenticated users can update their own profile
+      allow update: if 
+        request.auth != null && 
+        request.auth.uid == workerId;
+    }
+    
+    // Admin collection (for admin management)
+    match /admin/{adminId} {
+      // Only admin users can access admin data
+      allow read, write: if 
+        request.auth != null && 
+        request.auth.token.admin == true;
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/request_model.dart';
 import '../utils/worker_access_fix.dart';
 import 'request_state.dart';
@@ -136,6 +137,10 @@ class WorkerRequestCubit extends Cubit<RequestState> {
         description: data['description'] as String? ?? '',
         status: data['status'] as String? ?? 'new',
         takenBy: data['takenBy'] as String?,
+        timestamp: data['timestamp'] != null 
+            ? (data['timestamp'] as Timestamp).toDate()
+            : DateTime.now(),
+        createdBy: data['createdBy'] as String? ?? 'anonymous',
       );
     } catch (e) {
       debugPrint('[WorkerRequestCubit] Error mapping request: $e');

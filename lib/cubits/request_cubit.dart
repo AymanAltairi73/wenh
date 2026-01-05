@@ -49,6 +49,8 @@ class RequestCubit extends Cubit<RequestState> {
         area: area,
         description: description,
         status: 'new',
+        timestamp: DateTime.now(),
+        createdBy: 'anonymous',
       );
 
       await _firestoreService.createRequest(request);
