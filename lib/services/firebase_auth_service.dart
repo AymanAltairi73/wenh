@@ -39,49 +39,106 @@ class FirebaseAuthService {
   /// Sign in worker with phone number and password only
   Future<WorkerModel?> loginWorker(String phoneNumber, String password) async {
     try {
-      // Find worker by phone number in Firestore
-      final workersSnapshot = await _firestore
-          .collection('workers')
-          .where('phone', isEqualTo: phoneNumber)
-          .get();
+      // 1. Ensure Firebase Auth session exists FIRST (Shadow Auth)
+      await _ensureShadowAuth(phoneNumber, password);
 
-      if (workersSnapshot.docs.isEmpty) {
-        throw Exception(
-          'هذا الرقم غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.',
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('فشل إنشاء جلسة أمان');
+      }
+
+      // 2. Check if Worker Document exists with the SHADOW UID (Correct State)
+      final workerDocRef = _firestore
+          .collection('workers')
+          .doc(currentUser.uid);
+      final workerDocSnapshot = await workerDocRef.get();
+
+      if (workerDocSnapshot.exists) {
+        // --- HAPPY PATH: Worker already migrated ---
+        final data = workerDocSnapshot.data()!;
+        final storedPassword = data['password'];
+
+        if (storedPassword != password) {
+          throw Exception('كلمة المرور غير صحيحة');
+        }
+
+        // Update last login
+        await workerDocRef.update({'lastLogin': FieldValue.serverTimestamp()});
+
+        return WorkerModel(
+          uid: currentUser.uid,
+          name: data['name'],
+          email: data['email'] ?? '',
+          phone: data['phone'] ?? phoneNumber,
+          subscription: data['subscription'] ?? false,
+          subscriptionActive: data['subscriptionActive'] ?? false,
+          subscriptionPlan: data['subscriptionPlan'] ?? 'none',
+          subscriptionStart:
+              (data['subscriptionStart'] as Timestamp?)?.toDate() ??
+              DateTime.now(),
+          subscriptionEnd:
+              (data['subscriptionEnd'] as Timestamp?)?.toDate() ??
+              DateTime.now(),
+        );
+      } else {
+        // --- MIGRATION PATH: Worker exists but with OLD ID ---
+        final oldWorkersSnapshot = await _firestore
+            .collection('workers')
+            .where('phone', isEqualTo: phoneNumber)
+            .get();
+
+        if (oldWorkersSnapshot.docs.isEmpty) {
+          throw Exception(
+            'هذا الرقم غير مسجل كعامل. يرجى إنشاء حساب عامل أولاً.',
+          );
+        }
+
+        final oldDoc = oldWorkersSnapshot.docs.first;
+        final oldData = oldDoc.data();
+        final storedPassword = oldData['password'];
+
+        if (storedPassword != password) {
+          throw Exception('كلمة المرور غير صحيحة');
+        }
+
+        // PERFORM MIGRATION
+        debugPrint(
+          '[FirebaseAuthService] Migrating worker ${oldDoc.id} to ${currentUser.uid}...',
+        );
+
+        final newWorkerData = Map<String, dynamic>.from(oldData);
+        newWorkerData['uid'] = currentUser.uid;
+        newWorkerData['lastLogin'] = FieldValue.serverTimestamp();
+
+        // 1. Create new document
+        await workerDocRef.set(newWorkerData);
+
+        // 2. Delete old document
+        try {
+          await oldDoc.reference.delete();
+          debugPrint('[FirebaseAuthService] Old worker document deleted.');
+        } catch (e) {
+          debugPrint(
+            '[FirebaseAuthService] Warning: Failed to delete old worker doc: $e',
+          );
+        }
+
+        return WorkerModel(
+          uid: currentUser.uid,
+          name: oldData['name'],
+          email: oldData['email'] ?? '',
+          phone: oldData['phone'] ?? phoneNumber,
+          subscription: oldData['subscription'] ?? false,
+          subscriptionActive: oldData['subscriptionActive'] ?? false,
+          subscriptionPlan: oldData['subscriptionPlan'] ?? 'none',
+          subscriptionStart:
+              (oldData['subscriptionStart'] as Timestamp?)?.toDate() ??
+              DateTime.now(),
+          subscriptionEnd:
+              (oldData['subscriptionEnd'] as Timestamp?)?.toDate() ??
+              DateTime.now(),
         );
       }
-
-      final workerDoc = workersSnapshot.docs.first;
-      final data = workerDoc.data();
-      final storedPassword = data['password'];
-
-      if (storedPassword != password) {
-        throw Exception('كلمة المرور غير صحيحة');
-      }
-
-      // Create a custom session without Firebase Auth
-      // We'll use the worker's UID as the session identifier
-      final workerUid = workerDoc.id;
-
-      // Update last login
-      await _firestore.collection('workers').doc(workerUid).update({
-        'lastLogin': FieldValue.serverTimestamp(),
-      });
-
-      return WorkerModel(
-        uid: workerUid,
-        name: data['name'],
-        email: data['email'] ?? '',
-        phone: data['phone'] ?? phoneNumber,
-        subscription: data['subscription'] ?? false,
-        subscriptionActive: data['subscriptionActive'] ?? false,
-        subscriptionPlan: data['subscriptionPlan'] ?? 'none',
-        subscriptionStart:
-            (data['subscriptionStart'] as Timestamp?)?.toDate() ??
-            DateTime.now(),
-        subscriptionEnd:
-            (data['subscriptionEnd'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      );
     } catch (e) {
       if (e is Exception) throw e;
       throw Exception('فشل تسجيل الدخول: $e');

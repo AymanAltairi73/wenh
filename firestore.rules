@@ -33,32 +33,29 @@ service cloud.firestore {
         );
     }
     
-    // Workers collection - Authenticated access only
+    // Workers collection
     match /workers/{workerId} {
-      // Allow list queries for login purposes (any user can query by phone)
+      // 1. READ: Open for login lookups (query by phone)
       allow list: if true;
-      
-      // Allow updating lastLogin field after successful password verification
+      allow read: if true; // Generalized read for simplicity in this context
+
+      // 2. CREATE/UPDATE/DELETE (Owner): Authenticated user can manage their own document (Migration Target)
+      allow create, update, delete: if 
+        request.auth != null && 
+        request.auth.uid == workerId;
+
+      // 3. UPDATE (Anon): Allow updating lastLogin only (Legacy/Login flow)
       allow update: if 
         request.auth == null && 
         request.resource.data.keys().hasAll(['lastLogin']) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
       
-      // Only authenticated users can read their own profile
-      allow read: if request.auth != null && request.auth.uid == workerId;
+      // 4. DELETE (Migration Cleanup): Allow deleting unrelated doc if token email matches phone
+      allow delete: if
+        request.auth != null &&
+        resource.data.phone == request.auth.token.email.replace('admin_', '').replace('@wenh.com', '');
       
-      // Only authenticated users can create their own profile
-      allow create: if 
-        request.auth != null && 
-        request.auth.uid == workerId &&
-        request.resource.data.keys().hasAll(['uid', 'name', 'email', 'phone', 'subscriptionPlan', 'subscriptionStart', 'subscriptionEnd']);
-      
-      // Only authenticated users can update their own profile
-      allow update: if 
-        request.auth != null && 
-        request.auth.uid == workerId;
-      
-      // Admin can read all workers
+      // Admin can read all workers (redundant if read is true, but good for explicit intent)
       allow read: if 
         request.auth != null && 
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
