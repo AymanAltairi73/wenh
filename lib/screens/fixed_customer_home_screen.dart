@@ -33,7 +33,7 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
-        title: const Text('وينه'),
+        title: const Text('طلباتي'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,

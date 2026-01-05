@@ -140,9 +140,9 @@ class AdminCubit extends Cubit<AdminState> {
     emit(const AdminLoading());
     try {
       // Ensure no existing session conflicts
-      if (FirebaseAuth.instance.currentUser != null) {
-        await FirebaseAuth.instance.signOut();
-      }
+      // if (FirebaseAuth.instance.currentUser != null) {
+      //   await FirebaseAuth.instance.signOut();
+      // }
 
       await _authService.registerAdmin(
         phoneNumber: phoneNumber,

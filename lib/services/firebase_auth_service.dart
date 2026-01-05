@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/worker_model.dart';
@@ -116,7 +117,22 @@ class FirebaseAuthService {
 
       // Ensure Firebase Auth session exists (for Firestore security rules)
       if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
+        debugPrint('[FirebaseAuthService] Requesting anonymous auth...');
+        try {
+          await _auth.signInAnonymously();
+          debugPrint('[FirebaseAuthService] Anonymous auth successful');
+        } catch (e) {
+          // Continue even if anonymous auth fails (e.g. if disabled in console)
+          // This allows the admin to still log in locally, though some Firestore
+          // writes might fail if rules strictly require request.auth
+          debugPrint(
+            '[FirebaseAuthService] Warning: Anonymous auth failed: $e',
+          );
+        }
+      } else {
+        debugPrint(
+          '[FirebaseAuthService] Already authenticated: ${_auth.currentUser?.uid}',
+        );
       }
 
       // Update last login
