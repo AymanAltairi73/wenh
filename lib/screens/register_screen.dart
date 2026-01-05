@@ -21,36 +21,26 @@ class RegisterScreen extends StatelessWidget {
             : AppColors.backgroundGradient,
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header Section
-              Expanded(
-                flex: 2,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo Section
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.logoGradient,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header Section
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo Section - Arched Bottom
+                      ClipPath(
+                        clipper: BottomArchClipper(),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.person_add_outlined,
-                        size: 50,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
                     
                     // Title
                     Text(
@@ -65,76 +55,73 @@ class RegisterScreen extends StatelessWidget {
                       'أدخل بياناتك لإنشاء حساب',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        height: 1.4,
+                        fontSize: 16,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-              ),
+                ),
 
               // Form Section
-              Expanded(
-                flex: 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : AppColors.surface,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, -10),
-                      ),
-                    ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceDark : AppColors.surface,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, -10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    
+                    // Register Form
+                    _RegisterForm(isDark: isDark),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Login Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 20),
-                        
-                        // Register Form
-                        _RegisterForm(isDark: isDark),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Login Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'لديك حساب بالفعل؟',
-                              style: TextStyle(
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pushNamed(context, '/worker_login'),
-                              child: Text(
-                                'تسجيل الدخول',
-                                style: TextStyle(
-                                  color: AppColors.secondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'لديك حساب بالفعل؟',
+                          style: TextStyle(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                          ),
                         ),
-                        
-                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () => Navigator.pushNamed(context, '/login'),
+                          child: Text(
+                            'تسجيل الدخول',
+                            style: TextStyle(
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                    
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ])
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -332,5 +319,41 @@ class _RegisterFormState extends State<_RegisterForm> {
         ],
       ),
     );
+  }
+}
+
+// Custom clipper for creating a bottom arch shape
+class BottomArchClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    
+    // Start from top left corner
+    path.moveTo(0, 0);
+    
+    // Draw straight line to top right
+    path.lineTo(size.width, 0);
+    
+    // Draw straight line to bottom right
+    path.lineTo(size.width, size.height * 0.7);
+    
+    // Draw a curve that creates the arch at the bottom
+    path.quadraticBezierTo(
+      size.width / 2,  // Control point x (middle of width)
+      size.height * 1.1,  // Control point y (extends below to create curve)
+      0,              // End point x (left edge)
+      size.height * 0.7,  // End point y (same level as right side)
+    );
+    
+    // Complete the path
+    path.lineTo(0, 0);
+    path.close();
+    
+    return path;
+  }
+  
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return false;
   }
 }
