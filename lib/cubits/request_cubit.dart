@@ -42,6 +42,9 @@ class RequestCubit extends Cubit<RequestState> {
     required String type,
     required String area,
     required String description,
+    double? latitude,
+    double? longitude,
+    String? address,
   }) async {
     try {
       final request = RequestModel(
@@ -52,6 +55,9 @@ class RequestCubit extends Cubit<RequestState> {
         status: 'new',
         timestamp: DateTime.now(),
         createdBy: 'anonymous',
+        latitude: latitude,
+        longitude: longitude,
+        address: address,
       );
 
       await _firestoreService.createRequest(request);

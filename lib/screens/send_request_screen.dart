@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wenh/screens/request_preview_screen.dart';
+import 'package:wenh/screens/location_picker_screen.dart';
 import 'package:wenh/widgets/custom_button.dart';
 
 class SendRequestScreen extends StatefulWidget {
@@ -13,16 +14,21 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _budgetController = TextEditingController();
-  
+
   String? _selectedCategory;
   String? _selectedSubType;
   String? _selectedArea;
   String? _selectedPriority = 'normal';
   String? _selectedTime;
-  
+
+  // Location fields
+  double? _latitude;
+  double? _longitude;
+  String? _address;
+
   List<String> _filteredCategories = [];
   List<String> _filteredAreas = [];
-  
+
   final Map<String, List<String>> _serviceCategories = const {
     '🏗 البناء والتشطيبات': [
       'بنّاء',
@@ -127,28 +133,28 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
       'أعمال تحميل وتنزيل',
     ],
   };
-  List<String> get _currentSubServices => _serviceCategories[_selectedCategory] ?? const [];
- final List<String> _areas = const [
-  'بغداد',
-  'نينوى',
-  'البصرة',
-  'صلاح الدين',
-  'دهوك',
-  'أربيل',
-  'السليمانية',
-  'ديالى',
-  'واسط',
-  'ميسان',
-  'ذي قار',
-  'المثنى',
-  'بابل',
-  'كربلاء',
-  'النجف',
-  'الأنبار',
-  'الديوانية (القادسية)',
-  'كركوك',
-];
-
+  List<String> get _currentSubServices =>
+      _serviceCategories[_selectedCategory] ?? const [];
+  final List<String> _areas = const [
+    'بغداد',
+    'نينوى',
+    'البصرة',
+    'صلاح الدين',
+    'دهوك',
+    'أربيل',
+    'السليمانية',
+    'ديالى',
+    'واسط',
+    'ميسان',
+    'ذي قار',
+    'المثنى',
+    'بابل',
+    'كربلاء',
+    'النجف',
+    'الأنبار',
+    'الديوانية (القادسية)',
+    'كركوك',
+  ];
 
   @override
   void initState() {
@@ -178,10 +184,29 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
       if (query.isEmpty) {
         _filteredAreas = _areas;
       } else {
-        _filteredAreas =
-            _areas.where((area) => area.contains(query)).toList();
+        _filteredAreas = _areas.where((area) => area.contains(query)).toList();
       }
     });
+  }
+
+  Future<void> _pickLocation() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _latitude = result['latitude'] as double?;
+        _longitude = result['longitude'] as double?;
+        _address = result['address'] as String?;
+      });
+    }
   }
 
   void _goToPreview() {
@@ -199,6 +224,9 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                 ? null
                 : double.tryParse(_budgetController.text),
             preferredTime: _selectedTime,
+            latitude: _latitude,
+            longitude: _longitude,
+            address: _address,
           ),
         ),
       );
@@ -215,10 +243,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('إرسال طلب'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('إرسال طلب'), centerTitle: true),
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: SingleChildScrollView(
@@ -239,6 +264,8 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                       _buildSubTypeSection(),
                       const SizedBox(height: 16),
                       _buildAreaSection(),
+                      const SizedBox(height: 16),
+                      _buildLocationSection(),
                       const SizedBox(height: 16),
                       _buildDescriptionField(),
                       const SizedBox(height: 16),
@@ -281,10 +308,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: filledSteps / 4,
-            minHeight: 6,
-          ),
+          child: LinearProgressIndicator(value: filledSteps / 4, minHeight: 6),
         ),
       ],
     );
@@ -294,18 +318,13 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'التصنيف الرئيسي',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('التصنيف الرئيسي', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         TextFormField(
           decoration: InputDecoration(
             hintText: 'ابحث عن التصنيف...',
             prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onChanged: _filterCategories,
         ),
@@ -346,10 +365,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'الخدمة الفرعية',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('الخدمة الفرعية', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         if (_selectedCategory == null)
           Text(
@@ -395,18 +411,13 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'المنطقة',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('المنطقة', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         TextFormField(
           decoration: InputDecoration(
             hintText: 'ابحث عن المنطقة...',
             prefixIcon: const Icon(Icons.location_on),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onChanged: _filterAreas,
         ),
@@ -450,9 +461,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
         labelText: 'وصف الطلب',
         hintText: 'اشرح المشكلة أو الخدمة المطلوبة بالتفصيل...',
         prefixIcon: const Icon(Icons.description),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
       validator: (v) => (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
       onChanged: (_) => setState(() {}),
@@ -463,10 +472,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'الأولوية',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('الأولوية', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -508,9 +514,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
         hintText: 'أدخل المبلغ بالدينار العراقي',
         prefixIcon: const Icon(Icons.attach_money),
         suffixText: 'د.ع',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -523,7 +527,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
       'خلال أسبوع',
       'وقت محدد لاحقاً',
     ];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -548,6 +552,63 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
             );
           }).toList(),
         ),
+      ],
+    );
+  }
+
+  Widget _buildLocationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'الموقع على الخريطة',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            TextButton.icon(
+              onPressed: _pickLocation,
+              icon: Icon(
+                _latitude != null ? Icons.edit_location : Icons.add_location,
+                size: 20,
+              ),
+              label: Text(_latitude != null ? 'تعديل' : 'تحديد الموقع'),
+            ),
+          ],
+        ),
+        if (_address != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.location_on,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(_address!, style: const TextStyle(fontSize: 13)),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 8),
+          Text(
+            'تحديد الموقع يساعد العمال في الوصول إليك بسهولة',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
       ],
     );
   }

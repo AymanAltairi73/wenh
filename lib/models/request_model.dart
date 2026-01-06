@@ -11,6 +11,11 @@ class RequestModel extends Equatable {
   final DateTime timestamp;
   final String createdBy; // 'anonymous' or worker_id
 
+  // Location fields for map integration
+  final double? latitude;
+  final double? longitude;
+  final String? address; // Human-readable address
+
   const RequestModel({
     required this.id,
     required this.type,
@@ -20,6 +25,9 @@ class RequestModel extends Equatable {
     this.takenBy,
     required this.timestamp,
     this.createdBy = 'anonymous',
+    this.latitude,
+    this.longitude,
+    this.address,
   });
 
   factory RequestModel.fromFirestore(DocumentSnapshot doc) {
@@ -37,6 +45,9 @@ class RequestModel extends Equatable {
           ? (data['timestamp'] as Timestamp).toDate()
           : DateTime.now(),
       createdBy: data['createdBy'] ?? 'anonymous',
+      latitude: data['latitude'] as double?,
+      longitude: data['longitude'] as double?,
+      address: data['address'] as String?,
     );
   }
 
@@ -49,6 +60,9 @@ class RequestModel extends Equatable {
       'timestamp': Timestamp.fromDate(timestamp),
       'createdBy': createdBy,
       'takenBy': takenBy,
+      'latitude': latitude,
+      'longitude': longitude,
+      'address': address,
     };
   }
 
@@ -61,6 +75,9 @@ class RequestModel extends Equatable {
     String? takenBy,
     DateTime? timestamp,
     String? createdBy,
+    double? latitude,
+    double? longitude,
+    String? address,
   }) {
     return RequestModel(
       id: id ?? this.id,
@@ -71,6 +88,9 @@ class RequestModel extends Equatable {
       takenBy: takenBy ?? this.takenBy,
       timestamp: timestamp ?? this.timestamp,
       createdBy: createdBy ?? this.createdBy,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      address: address ?? this.address,
     );
   }
 
@@ -84,5 +104,8 @@ class RequestModel extends Equatable {
     takenBy,
     timestamp,
     createdBy,
+    latitude,
+    longitude,
+    address,
   ];
 }

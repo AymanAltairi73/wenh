@@ -6,6 +6,7 @@ import '../cubits/admin_cubit.dart';
 import '../cubits/request_cubit.dart';
 import '../cubits/admin_stats_cubit.dart';
 import '../models/worker_model.dart';
+import '../models/request_model.dart';
 import '../services/app_repository.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
@@ -14,6 +15,7 @@ import 'package:wenh/widgets/stat_card.dart';
 import 'package:wenh/widgets/revenue_chart.dart';
 import 'package:wenh/widgets/request_card.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
+import 'package:wenh/widgets/admin_map_view.dart';
 
 class EnhancedAdminDashboard extends StatefulWidget {
   const EnhancedAdminDashboard({super.key});
@@ -30,7 +32,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     // Check if admin is authenticated before fetching requests
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -95,6 +97,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
                       _buildRequestsTab(),
                       _buildWorkersTab(),
                       _buildRevenueTab(),
+                      _buildMapTab(),
                     ],
                   ),
                 ),
@@ -126,6 +129,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
           Tab(text: 'الطلبات', icon: Icon(AppIcons.requests, size: 20)),
           Tab(text: 'العمال', icon: Icon(AppIcons.workers, size: 20)),
           Tab(text: 'الأرباح', icon: Icon(Icons.payments, size: 20)),
+          Tab(text: 'الخريطة', icon: Icon(Icons.map, size: 20)),
         ],
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
@@ -790,6 +794,30 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
 
         return const SliverFillRemaining(
           child: Center(child: Text('حدث خطأ في تحميل الطلبات')),
+        );
+      },
+    );
+  }
+
+  Widget _buildMapTab() {
+    final repository = AppRepository();
+    return BlocBuilder<RequestCubit, RequestState>(
+      builder: (context, requestState) {
+        return FutureBuilder<List<WorkerModel>>(
+          future: repository.getWorkers(),
+          builder: (context, workerSnapshot) {
+            if (requestState is RequestLoading ||
+                workerSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final requests = requestState is RequestLoaded
+                ? requestState.requests
+                : <RequestModel>[];
+            final workers = workerSnapshot.data ?? [];
+
+            return AdminMapView(requests: requests, workers: workers);
+          },
         );
       },
     );

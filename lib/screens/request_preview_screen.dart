@@ -11,6 +11,9 @@ class RequestPreviewScreen extends StatelessWidget {
   final String? priority;
   final double? budget;
   final String? preferredTime;
+  final double? latitude;
+  final double? longitude;
+  final String? address;
 
   const RequestPreviewScreen({
     super.key,
@@ -21,20 +24,28 @@ class RequestPreviewScreen extends StatelessWidget {
     this.priority,
     this.budget,
     this.preferredTime,
+    this.latitude,
+    this.longitude,
+    this.address,
   });
 
   void _submitRequest(BuildContext context) {
     try {
       final combinedType = '$category - $subType';
-      debugPrint('[RequestPreviewScreen] Submitting request: $combinedType in $area');
-      context.read<RequestCubit>().addRequest(
-            type: combinedType,
-            area: area,
-            description: description,
-          );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
+      debugPrint(
+        '[RequestPreviewScreen] Submitting request: $combinedType in $area',
       );
+      context.read<RequestCubit>().addRequest(
+        type: combinedType,
+        area: area,
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+        address: address,
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب بنجاح')));
       Navigator.pushNamedAndRemoveUntil(context, '/customer', (route) => false);
     } catch (e, stackTrace) {
       debugPrint('[RequestPreviewScreen] _submitRequest error: $e');
@@ -45,10 +56,7 @@ class RequestPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('معاينة الطلب'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('معاينة الطلب'), centerTitle: true),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -73,12 +81,7 @@ class RequestPreviewScreen extends StatelessWidget {
                         Icons.category,
                       ),
                       const SizedBox(height: 12),
-                      _buildInfoRow(
-                        context,
-                        'الخدمة',
-                        subType,
-                        Icons.build,
-                      ),
+                      _buildInfoRow(context, 'الخدمة', subType, Icons.build),
                       const SizedBox(height: 12),
                       _buildInfoRow(
                         context,
@@ -86,6 +89,15 @@ class RequestPreviewScreen extends StatelessWidget {
                         area,
                         Icons.location_on,
                       ),
+                      if (address != null) ...[
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          context,
+                          'الموقع على الخريطة',
+                          address!,
+                          Icons.map,
+                        ),
+                      ],
                       if (priority != null) ...[
                         const SizedBox(height: 12),
                         _buildInfoRow(
@@ -177,16 +189,13 @@ class RequestPreviewScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),

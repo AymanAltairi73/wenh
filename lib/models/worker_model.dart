@@ -11,6 +11,9 @@ class WorkerModel extends Equatable {
   final String subscriptionPlan; // 'weekly' | 'monthly' | 'none'
   final DateTime subscriptionStart;
   final DateTime subscriptionEnd;
+  final double? latitude;
+  final double? longitude;
+  final DateTime? lastLocationUpdate;
 
   const WorkerModel({
     required this.uid,
@@ -22,6 +25,9 @@ class WorkerModel extends Equatable {
     required this.subscriptionPlan,
     required this.subscriptionStart,
     required this.subscriptionEnd,
+    this.latitude,
+    this.longitude,
+    this.lastLocationUpdate,
   });
 
   factory WorkerModel.fromMap(Map<String, dynamic> map) {
@@ -37,6 +43,11 @@ class WorkerModel extends Equatable {
           (map['subscriptionStart'] as dynamic)?.toDate() ?? DateTime.now(),
       subscriptionEnd:
           (map['subscriptionEnd'] as dynamic)?.toDate() ?? DateTime.now(),
+      latitude: map['latitude']?.toDouble(),
+      longitude: map['longitude']?.toDouble(),
+      lastLocationUpdate: map['lastLocationUpdate'] != null
+          ? (map['lastLocationUpdate'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -51,6 +62,10 @@ class WorkerModel extends Equatable {
       'subscriptionPlan': subscriptionPlan,
       'subscriptionStart': Timestamp.fromDate(subscriptionStart),
       'subscriptionEnd': Timestamp.fromDate(subscriptionEnd),
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (lastLocationUpdate != null)
+        'lastLocationUpdate': Timestamp.fromDate(lastLocationUpdate!),
     };
   }
 
@@ -68,5 +83,8 @@ class WorkerModel extends Equatable {
     subscriptionPlan,
     subscriptionStart,
     subscriptionEnd,
+    latitude,
+    longitude,
+    lastLocationUpdate,
   ];
 }

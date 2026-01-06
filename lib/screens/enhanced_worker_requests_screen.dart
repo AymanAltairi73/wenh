@@ -12,7 +12,8 @@ import 'package:wenh/services/location_service.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
 import 'package:wenh/widgets/shimmer_loading.dart';
-
+import 'package:wenh/utils/map_utils.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -730,6 +731,23 @@ class _EnhancedRequestCard extends StatelessWidget {
   }
 
   String _calculateDistance(String area) {
+    // If request has exact coordinates, use them
+    if (request.latitude != null && request.longitude != null) {
+      // For now, let's assume we want to show distance from a reference point (e.g. Baghdad)
+      // In a real app, this would be from the worker's real-time position
+      final baghdadLocation = LocationService.getLocationByCity('بغداد');
+      if (baghdadLocation != null) {
+        final dist = MapUtils.calculateDistance(
+          lat1: baghdadLocation.latitude,
+          lon1: baghdadLocation.longitude,
+          lat2: request.latitude!,
+          lon2: request.longitude!,
+        );
+        return MapUtils.formatDistance(dist);
+      }
+    }
+
+    // Fallback to city-based calculation
     final location = LocationService.getLocationByCity(area);
     if (location != null) {
       final baghdadLocation = LocationService.getLocationByCity('بغداد');
@@ -909,48 +927,104 @@ class _EnhancedRequestCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [AppColors.cardShadowHeavy],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تفاصيل الطلب',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'تفاصيل الطلب',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const Divider(height: 32),
-              _buildDetailRow('النوع:', request.type),
-              _buildDetailRow('المنطقة:', request.area),
-              _buildDetailRow('المسافة:', distance),
-              _buildDetailRow('الحالة:', request.status),
-              const SizedBox(height: 16),
-              const Text(
-                'الوصف:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.background.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
+                const Divider(height: 32),
+                _buildDetailRow('النوع:', request.type),
+                _buildDetailRow('المنطقة:', request.area),
+                if (request.address != null)
+                  _buildDetailRow('العنوان:', request.address!),
+                _buildDetailRow('المسافة:', distance),
+                _buildDetailRow('الحالة:', request.status),
+                const SizedBox(height: 16),
+
+                // Map Preview Section
+                if (request.latitude != null && request.longitude != null) ...[
+                  const Text(
+                    'موقع الزبون:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 180,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(request.latitude!, request.longitude!),
+                        zoom: 14,
+                      ),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('customer'),
+                          position: LatLng(
+                            request.latitude!,
+                            request.longitude!,
+                          ),
+                        ),
+                      },
+                      liteModeEnabled: true, // Optimizes for performance
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => MapUtils.showNavigationOptions(
+                        context: context,
+                        destinationLat: request.latitude!,
+                        destinationLng: request.longitude!,
+                        destinationLabel: request.address ?? request.area,
+                      ),
+                      icon: const Icon(Icons.navigation),
+                      label: const Text('فتح في تطبيق الملاحة'),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                const Text(
+                  'الوصف:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                child: Text(
-                  request.description,
-                  style: const TextStyle(height: 1.5),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.background.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    request.description,
+                    style: const TextStyle(height: 1.5),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('إغلاق'),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('إغلاق'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
