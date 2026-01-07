@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wenh/cubits/request_cubit.dart';
 import 'package:wenh/cubits/request_state.dart';
+import 'package:wenh/cubits/auth_cubit.dart';
+import 'package:wenh/cubits/auth_state.dart';
 import 'package:wenh/models/request_model.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/widgets/glassmorphic_search_bar.dart';
+import 'package:wenh/widgets/customer_map_view.dart';
+import 'package:wenh/models/worker_model.dart';
+import 'package:wenh/utils/map_utils.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// Fixed Customer Home Screen - No Permission Issues
 class FixedCustomerHomeScreen extends StatefulWidget {
@@ -18,6 +25,45 @@ class FixedCustomerHomeScreen extends StatefulWidget {
 class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
   int _currentIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  LatLng? _userLocation;
+  bool _isLocationLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      final hasPermission = await MapUtils.handleLocationPermission(context);
+      if (!hasPermission) {
+        if (mounted) {
+          setState(() {
+            _userLocation = const LatLng(33.3152, 44.3661); // Baghdad default
+            _isLocationLoaded = true;
+          });
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+          _isLocationLoaded = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) {
+        setState(() {
+          _userLocation = const LatLng(33.3152, 44.3661); // Baghdad default
+          _isLocationLoaded = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -69,8 +115,9 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(Icons.home, 'الرئيسية', 0),
-            _buildNavItem(Icons.add_circle, 'طلب جديد', 1),
-            _buildNavItem(Icons.person, 'الملف', 2),
+            _buildNavItem(Icons.map, 'الخريطة', 1),
+            _buildNavItem(Icons.list_alt, 'طلباتي', 2),
+            _buildNavItem(Icons.person, 'الملف', 3),
           ],
         ),
       ),
@@ -91,9 +138,9 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
       case 0:
         return _buildHomeTab();
       case 1:
-        return _buildMyRequestsTab();
+        return _buildMapTab();
       case 2:
-        return _buildServicesTab();
+        return _buildMyRequestsTab();
       case 3:
         return _buildMoreTab();
       default:
@@ -244,6 +291,138 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
     );
   }
 
+  Widget _buildMapTab() {
+    if (!_isLocationLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final firestoreService = context.read<RequestCubit>().firestoreService;
+
+    return StreamBuilder<List<WorkerModel>>(
+      stream: firestoreService.getAllWorkers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final workers = snapshot.data ?? [];
+
+        return CustomerMapView(
+          userLocation: _userLocation!,
+          workers: workers,
+          onWorkerTap: (worker) {
+            _showWorkerDetails(worker);
+          },
+        );
+      },
+    );
+  }
+
+  void _showWorkerDetails(WorkerModel worker) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Text(
+                    worker.name[0],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        worker.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        worker.profession,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'متاح الآن',
+                    style: TextStyle(color: Colors.green, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.star, color: Colors.amber, size: 20),
+                const Text(
+                  ' 4.8 ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '(24 تقييم)',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    '/send',
+                    arguments: {'worker': worker},
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('طلب خدمة من هذا العامل'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMyRequestsTab() {
     // Trigger fetch if needed (optional, but good practice if not done elsewhere)
     // WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -327,48 +506,15 @@ class _FixedCustomerHomeScreenState extends State<FixedCustomerHomeScreen> {
         return Center(
           child: ElevatedButton(
             onPressed: () {
-              context.read<RequestCubit>().getRequests();
+              final authState = context.read<AuthCubit>().state;
+              String? userId;
+              if (authState is Authenticated) {
+                userId = authState.user.uid;
+              }
+              context.read<RequestCubit>().getRequests(createdBy: userId);
             },
             child: const Text('عرض الطلبات'),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildServicesTab() {
-    final services = [
-      {
-        'name': 'الكهرباء',
-        'icon': Icons.electrical_services,
-        'color': Colors.blue,
-      },
-      {'name': 'السباكة', 'icon': Icons.plumbing, 'color': Colors.cyan},
-      {'name': 'التكييف', 'icon': Icons.ac_unit, 'color': Colors.lightBlue},
-      {'name': 'الدهان', 'icon': Icons.format_paint, 'color': Colors.orange},
-      {'name': 'النجارة', 'icon': Icons.carpenter, 'color': Colors.brown},
-      {
-        'name': 'النظافة',
-        'icon': Icons.cleaning_services,
-        'color': Colors.green,
-      },
-    ];
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: services.length,
-      itemBuilder: (context, index) {
-        final service = services[index];
-        return _buildServiceCard(
-          service['name'] as String,
-          service['icon'] as IconData,
-          service['color'] as Color,
         );
       },
     );

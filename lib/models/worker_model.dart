@@ -6,9 +6,10 @@ class WorkerModel extends Equatable {
   final String name;
   final String email;
   final String phone;
-  final bool subscription; // legacy: maybe keep for compatibility or replace
+  final String profession;
+  final bool subscription;
   final bool subscriptionActive;
-  final String subscriptionPlan; // 'weekly' | 'monthly' | 'none'
+  final String subscriptionPlan;
   final DateTime subscriptionStart;
   final DateTime subscriptionEnd;
   final double? latitude;
@@ -20,6 +21,7 @@ class WorkerModel extends Equatable {
     required this.name,
     required this.email,
     required this.phone,
+    required this.profession,
     required this.subscription,
     required this.subscriptionActive,
     required this.subscriptionPlan,
@@ -36,6 +38,7 @@ class WorkerModel extends Equatable {
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
+      profession: map['profession'] ?? 'عامل',
       subscription: map['subscription'] ?? false,
       subscriptionActive: map['subscriptionActive'] ?? false,
       subscriptionPlan: map['subscriptionPlan'] ?? 'none',
@@ -57,6 +60,7 @@ class WorkerModel extends Equatable {
       'name': name,
       'email': email,
       'phone': phone,
+      'profession': profession,
       'subscription': subscription,
       'subscriptionActive': subscriptionActive,
       'subscriptionPlan': subscriptionPlan,
@@ -78,6 +82,7 @@ class WorkerModel extends Equatable {
     name,
     email,
     phone,
+    profession,
     subscription,
     subscriptionActive,
     subscriptionPlan,

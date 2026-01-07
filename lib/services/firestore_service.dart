@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/request_model.dart';
 import '../models/worker_model.dart';
+import '../models/user_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,6 +30,7 @@ class FirestoreService {
   Stream<List<RequestModel>> getRequests({
     String? status,
     String? area,
+    String? createdBy,
     int limit = 50,
   }) {
     final operationId = DateTime.now().millisecondsSinceEpoch;
@@ -65,6 +67,11 @@ class FirestoreService {
       if (area != null) {
         query = query.where('area', isEqualTo: area);
         debugPrint('[$operationId] [FILTER] Area filter: $area');
+      }
+
+      if (createdBy != null) {
+        query = query.where('createdBy', isEqualTo: createdBy);
+        debugPrint('[$operationId] [FILTER] CreatedBy filter: $createdBy');
       }
 
       query = query.orderBy('createdAt', descending: true).limit(limit);
@@ -305,15 +312,21 @@ class FirestoreService {
   // --- Admin Management Functions ---
 
   Stream<List<WorkerModel>> getAllWorkers() {
-    try {
-      return _firestore.collection('workers').snapshots().map((snapshot) {
-        return snapshot.docs
-            .map((doc) => WorkerModel.fromMap(doc.data()))
-            .toList();
-      });
-    } catch (e) {
-      throw _handleFirestoreError(e);
-    }
+    return _firestore
+        .collection('workers')
+        .snapshots()
+        .map((snapshot) {
+          debugPrint(
+            '[Firestore] Workers: found ${snapshot.docs.length} docs (User: $currentUserId)',
+          );
+          return snapshot.docs
+              .map((doc) => WorkerModel.fromMap(doc.data()))
+              .toList();
+        })
+        .handleError((error) {
+          debugPrint('[Firestore] [ERROR] "workers" collection: $error');
+          throw _handleFirestoreError(error);
+        });
   }
 
   Future<void> updateWorkerStatus(String workerId, bool isActive) async {
@@ -321,6 +334,55 @@ class FirestoreService {
       await _firestore.collection('workers').doc(workerId).update({
         'subscriptionActive': isActive,
         'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw _handleFirestoreError(e);
+    }
+  }
+
+  /// Update worker location in real-time
+  Future<void> updateWorkerLocation(
+    String workerId,
+    double lat,
+    double lng,
+  ) async {
+    try {
+      await _firestore.collection('workers').doc(workerId).update({
+        'latitude': lat,
+        'longitude': lng,
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw _handleFirestoreError(e);
+    }
+  }
+
+  /// Get real-time stream of all users (customers)
+  Stream<List<UserModel>> getAllUsers() {
+    return _firestore
+        .collection('users')
+        .snapshots()
+        .map((snapshot) {
+          debugPrint(
+            '[Firestore] Users: found ${snapshot.docs.length} docs (User: $currentUserId)',
+          );
+          return snapshot.docs
+              .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+              .toList();
+        })
+        .handleError((error) {
+          debugPrint('[Firestore] [ERROR] "users" collection: $error');
+          throw _handleFirestoreError(error);
+        });
+  }
+
+  /// Update user (customer) location in real-time
+  Future<void> updateUserLocation(String userId, double lat, double lng) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'latitude': lat,
+        'longitude': lng,
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       throw _handleFirestoreError(e);

@@ -70,6 +70,7 @@ class FirebaseAuthService {
           name: data['name'],
           email: data['email'] ?? '',
           phone: data['phone'] ?? phoneNumber,
+          profession: data['profession'] ?? 'عامل',
           subscription: data['subscription'] ?? false,
           subscriptionActive: data['subscriptionActive'] ?? false,
           subscriptionPlan: data['subscriptionPlan'] ?? 'none',
@@ -128,6 +129,7 @@ class FirebaseAuthService {
           name: oldData['name'],
           email: oldData['email'] ?? '',
           phone: oldData['phone'] ?? phoneNumber,
+          profession: oldData['profession'] ?? 'عامل',
           subscription: oldData['subscription'] ?? false,
           subscriptionActive: oldData['subscriptionActive'] ?? false,
           subscriptionPlan: oldData['subscriptionPlan'] ?? 'none',
@@ -251,6 +253,7 @@ class FirebaseAuthService {
     required String phoneNumber,
     required String password,
     required String name,
+    required String profession,
   }) async {
     try {
       // Check if phone number already exists
@@ -273,6 +276,7 @@ class FirebaseAuthService {
         'phone': phoneNumber,
         'password': password, // Store password in Firestore
         'name': name,
+        'profession': profession,
         'email': '',
         'role': 'worker',
         'subscription': false,

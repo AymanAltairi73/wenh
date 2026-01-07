@@ -14,13 +14,13 @@ class RequestCubit extends Cubit<RequestState> {
     : _firestoreService = firestoreService ?? FirestoreService(),
       super(const RequestInitial());
 
-  void getRequests({String? status, String? area}) {
+  void getRequests({String? status, String? area, String? createdBy}) {
     emit(const RequestLoading());
 
     try {
       _requestsSubscription?.cancel();
       _requestsSubscription = _firestoreService
-          .getRequests(status: status, area: area)
+          .getRequests(status: status, area: area, createdBy: createdBy)
           .listen(
             (requests) {
               emit(RequestLoaded(requests));

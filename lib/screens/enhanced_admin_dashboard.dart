@@ -7,6 +7,7 @@ import '../cubits/request_cubit.dart';
 import '../cubits/admin_stats_cubit.dart';
 import '../models/worker_model.dart';
 import '../models/request_model.dart';
+import '../models/user_model.dart';
 import '../services/app_repository.dart';
 import 'package:wenh/core/theme/app_colors.dart';
 import 'package:wenh/core/theme/app_icons.dart';
@@ -28,11 +29,17 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
     with SingleTickerProviderStateMixin {
   String _selectedFilter = 'all';
   late TabController _tabController;
+  Stream<List<WorkerModel>>? _workersStream;
+  Stream<List<UserModel>>? _usersStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+
+    final firestoreService = context.read<RequestCubit>().firestoreService;
+    _workersStream = firestoreService.getAllWorkers();
+    _usersStream = firestoreService.getAllUsers();
 
     // Check if admin is authenticated before fetching requests
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -72,7 +79,7 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AdminCubit, AdminState>(
+    return BlocConsumer<AdminCubit, AdminState>(
       listener: (context, state) {
         // Show success message when admin reaches home screen after authentication
         if (state is AdminAuthenticated) {
@@ -82,36 +89,44 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
           });
         }
       },
-      child: Scaffold(
-        body: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildAppBar(context),
-                _buildTabBar(),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildRequestsTab(),
-                      _buildWorkersTab(),
-                      _buildRevenueTab(),
-                      _buildMapTab(),
-                    ],
+      builder: (context, state) {
+        if (state is! AdminAuthenticated) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Scaffold(
+          body: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildAppBar(context),
+                  _buildTabBar(),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildRequestsTab(),
+                        _buildWorkersTab(),
+                        _buildRevenueTab(),
+                        _buildMapTab(),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => Navigator.pushNamed(context, '/admin-management'),
-          icon: const Icon(AppIcons.admin),
-          label: const Text('إدارة المديرين'),
-          backgroundColor: AppColors.primary,
-        ),
-      ),
+          // floatingActionButton: FloatingActionButton.extended(
+          //   onPressed: () => Navigator.pushNamed(context, '/admin-management'),
+          //   icon: const Icon(AppIcons.admin),
+          //   label: const Text('إدارة المديرين'),
+          //   backgroundColor: AppColors.primary,
+          // ),
+        );
+      },
     );
   }
 
@@ -800,23 +815,33 @@ class _EnhancedAdminDashboardState extends State<EnhancedAdminDashboard>
   }
 
   Widget _buildMapTab() {
-    final repository = AppRepository();
     return BlocBuilder<RequestCubit, RequestState>(
       builder: (context, requestState) {
-        return FutureBuilder<List<WorkerModel>>(
-          future: repository.getWorkers(),
+        return StreamBuilder<List<WorkerModel>>(
+          stream: _workersStream,
           builder: (context, workerSnapshot) {
-            if (requestState is RequestLoading ||
-                workerSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+            return StreamBuilder<List<UserModel>>(
+              stream: _usersStream,
+              builder: (context, userSnapshot) {
+                if (requestState is RequestLoading ||
+                    workerSnapshot.connectionState == ConnectionState.waiting ||
+                    userSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            final requests = requestState is RequestLoaded
-                ? requestState.requests
-                : <RequestModel>[];
-            final workers = workerSnapshot.data ?? [];
+                final requests = requestState is RequestLoaded
+                    ? requestState.requests
+                    : <RequestModel>[];
+                final workers = workerSnapshot.data ?? [];
+                final customers = userSnapshot.data ?? [];
 
-            return AdminMapView(requests: requests, workers: workers);
+                return AdminMapView(
+                  requests: requests,
+                  workers: workers,
+                  customers: customers,
+                );
+              },
+            );
           },
         );
       },

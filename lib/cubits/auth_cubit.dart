@@ -16,7 +16,7 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthStorageService _storageService = AuthStorageService();
   final FirestoreService _firestoreService = FirestoreService();
   WorkerModel? current;
-  
+
   // Track if success message has been shown to prevent duplicates
   bool _hasShownSuccessMessage = false;
 
@@ -41,7 +41,9 @@ class AuthCubit extends Cubit<AuthState> {
             if (doc.exists) {
               final worker = WorkerModel.fromMap(doc.data()!);
               current = worker;
-              _firestoreService.setCurrentUserId(worker.uid); // Set in FirestoreService
+              _firestoreService.setCurrentUserId(
+                worker.uid,
+              ); // Set in FirestoreService
               emit(Authenticated(worker));
               return;
             }
@@ -66,7 +68,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Show success message for authentication (login or registration)
   void showAuthSuccess(BuildContext context) {
     if (_hasShownSuccessMessage) return; // Prevent duplicate messages
-    
+
     _hasShownSuccessMessage = true;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -113,14 +115,13 @@ class AuthCubit extends Cubit<AuthState> {
         await FirebaseAuth.instance.signOut();
       }
 
-      final worker = await _authService.loginWorker(
-        phoneNumber,
-        password,
-      );
-      
+      final worker = await _authService.loginWorker(phoneNumber, password);
+
       if (worker != null) {
         current = worker;
-        _firestoreService.setCurrentUserId(worker.uid); // Set in FirestoreService
+        _firestoreService.setCurrentUserId(
+          worker.uid,
+        ); // Set in FirestoreService
 
         // Save Remember Me preference
         await _storageService.setRememberMe(
@@ -146,6 +147,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String phoneNumber,
     required String password,
     required String name,
+    required String profession,
     required BuildContext context,
   }) async {
     emit(const AuthLoading());
@@ -159,13 +161,13 @@ class AuthCubit extends Cubit<AuthState> {
         phoneNumber: phoneNumber,
         password: password,
         name: name,
+        profession: profession,
       );
-      
+
       // Auto-login after registration
       await loginWithPhone(phoneNumber, password, context: context);
-      
+
       // Success message will be shown by the BlocListener in the UI
-      
     } catch (e, stackTrace) {
       debugPrint('[AuthCubit] registerWithPhone error: $e');
       debugPrint('[AuthCubit] stackTrace: $stackTrace');
@@ -173,7 +175,6 @@ class AuthCubit extends Cubit<AuthState> {
       emit(const AuthInitial());
     }
   }
-
 
   Future<void> logout() async {
     await _authService.logout();

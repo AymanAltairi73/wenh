@@ -1,106 +1,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Requests collection - Public read, authenticated write
-    match /requests/{requestId} {
-      // Anyone can read requests
-      allow read: if true;
-      
-      // Anyone can create requests (customers without registration)
-      allow create: if 
-        request.resource.data.keys().hasAll(['type', 'area', 'description']) &&
-        request.resource.data.type is string &&
-        request.resource.data.area is string &&
-        request.resource.data.description is string &&
-        request.resource.data.status == 'new' &&
-        request.resource.data.createdBy == 'anonymous';
-      
-      // Only authenticated workers can update requests (to take them)
-      allow update: if 
-        request.auth != null &&
-        (
-          // Option 1: Worker taking the request
-          (
-            // Verify the user is a valid worker or admin
-            (exists(/databases/$(database)/documents/workers/$(request.auth.uid)) || 
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid))) &&
-            request.resource.data.status == 'taken'
-          )
-        );
+    
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Workers collection
-    match /workers/{workerId} {
-      // 1. READ: Open for login lookups (query by phone)
-      allow list: if true;
-      allow read: if true; // Generalized read for simplicity in this context
-
-      // 2. CREATE/UPDATE/DELETE (Owner): Authenticated user can manage their own document (Migration Target)
-      allow create, update, delete: if 
-        request.auth != null && 
-        request.auth.uid == workerId;
-
-      // 3. UPDATE (Anon): Allow updating lastLogin only (Legacy/Login flow)
-      allow update: if 
-        request.auth == null && 
-        request.resource.data.keys().hasAll(['lastLogin']) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
-      
-      // 4. DELETE (Migration Cleanup): Allow deleting unrelated doc if token email matches phone
-      allow delete: if
-        request.auth != null &&
-        resource.data.phone == request.auth.token.email.replace('admin_', '').replace('@wenh.com', '');
-      
-      // Admin can read all workers (redundant if read is true, but good for explicit intent)
-      allow read: if 
-        request.auth != null && 
+    function isAdmin() {
+      return isAuthenticated() && 
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
-    // Admins collection
-    match /admins/{adminId} {
-      // 1. READ: Open for login lookups (query by phone)
-      allow read: if true;
-      
-      // 2. CREATE/UPDATE/DELETE (Owner): Authenticated user can manage their own document (Migration Target)
-      allow create, update, delete: if 
-        request.auth != null && 
-        request.auth.uid == adminId;
+    function isWorker() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/workers/$(request.auth.uid));
+    }
 
-      // 3. UPDATE (Anon): Allow updating lastLogin only (Legacy/Login flow)
-      allow update: if 
-        request.auth == null && 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']);
-      
-      // 4. DELETE (Migration Cleanup): Allow deleting unrelated doc if token email matches phone
-      // Note: We check if resource exists to be safe, though delete implies it does.
-      allow delete: if
-        request.auth != null &&
-        resource.data.phone == request.auth.token.email.replace('admin_', '').replace('@wenh.com', '');
+    function isCustomer() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
-    
-    // Favorites collection - User access only
-    match /favorites/{favoriteId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Drafts collection - User access only
-    match /drafts/{draftId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-    }
-    
-    // Notifications collection - User access only
-    match /notifications/{notificationId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-    }
-    
-    // Users collection - User access only
+
+    // --- Users (Customers) Collection ---
     match /users/{userId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == userId;
+      // Admin Map requires list + get
+      allow list, get: if isAdmin();
+      // Users can manage their own data
+      allow read, write: if isOwner(userId);
+      // Workers can see specific customer details for their accepted requests
+      allow get: if isWorker();
+    }
+
+    // --- Workers Collection ---
+    match /workers/{workerId} {
+      // Admin list/get
+      allow list, get: if isAdmin();
+      // Customers see all workers on the map
+      allow list, get: if isAuthenticated();
+      // Worker updates their OWN location
+      allow update: if isOwner(workerId) && 
+        request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['latitude', 'longitude', 'lastLocationUpdate', 'updatedAt', 'lastLogin']);
+      // Allow full write for admin or owner (for profile setup)
+      allow write: if isAdmin() || isOwner(workerId);
+    }
+
+    // --- Requests Collection ---
+    match /requests/{requestId} {
+      // Admin sees/manages all
+      allow read, write: if isAdmin();
+      // Workers see new requests
+      allow list: if isWorker();
+      allow get: if isWorker() || isOwner(resource.data.createdBy);
+      // Customers create requests
+      allow create: if isAuthenticated();
+      // Workers take/complete requests
+      allow update: if isWorker();
+    }
+
+    // --- Admins Collection ---
+    match /admins/{adminId} {
+      allow read, write: if isOwner(adminId) || isAdmin();
+      allow list: if isAuthenticated();
+    }
+    
+    // --- Stats / Metadata ---
+    match /stats/{docId} {
+      allow read, write: if isAdmin();
     }
   }
 }

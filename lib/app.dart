@@ -27,6 +27,7 @@ import 'screens/settings_screen.dart';
 import 'screens/customer_profile_screen.dart';
 import 'screens/worker_profile_screen.dart';
 import 'screens/subscription_selection_screen.dart';
+import 'screens/test_map_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -102,6 +103,7 @@ class _AppState extends State<App> {
               '/user-profile': (_) =>
                   const WorkerProfileScreen(), // Alias for compatibility with enhanced screen
               '/subscription': (_) => const SubscriptionSelectionScreen(),
+              '/test-map': (_) => const TestMapScreen(),
             },
           );
         },

@@ -16,6 +16,7 @@ import 'package:wenh/utils/map_utils.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 
 class EnhancedWorkerRequestsScreen extends StatefulWidget {
   const EnhancedWorkerRequestsScreen({super.key});
@@ -32,6 +33,9 @@ class _EnhancedWorkerRequestsScreenState
   RequestFilterModel _currentFilter = const RequestFilterModel();
   bool _showMap = false;
   bool _isInitialized = false;
+  Set<Marker> _mapMarkers = {};
+  GoogleMapController? _mapController;
+  bool _hasInitialMarkersFitted = false;
 
   @override
   void initState() {
@@ -44,29 +48,48 @@ class _EnhancedWorkerRequestsScreenState
       if (!mounted) return;
 
       final authState = context.read<AuthCubit>().state;
-      debugPrint(
-        '[EnhancedWorkerRequestsScreen] Auth state: ${authState.runtimeType}',
-      );
-
       if (authState is Authenticated) {
-        debugPrint(
-          '[EnhancedWorkerRequestsScreen] User is authenticated: ${authState.user.uid}',
-        );
+        _startLocationTracking(authState.user.uid);
 
-        // Add small delay to ensure currentUserId is set before fetching requests
         Future.delayed(const Duration(milliseconds: 100), () {
-          debugPrint(
-            '[EnhancedWorkerRequestsScreen] Fetching requests after delay...',
-          );
-          context.read<RequestCubit>().getRequests();
+          context.read<RequestCubit>().getRequests(status: 'new');
         });
       } else {
-        debugPrint(
-          '[EnhancedWorkerRequestsScreen] Worker not authenticated, redirecting to login',
-        );
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
+  }
+
+  void _startLocationTracking(String workerId) async {
+    final hasPermission = await MapUtils.handleLocationPermission(context);
+    if (!hasPermission) return;
+
+    // Basic throttling for location updates
+    DateTime? lastUpdate;
+    final firestoreService = context.read<RequestCubit>().firestoreService;
+
+    Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 50, // Update every 50 meters
+      ),
+    ).listen(
+      (Position position) {
+        final now = DateTime.now();
+        if (lastUpdate == null ||
+            now.difference(lastUpdate!) > const Duration(seconds: 30)) {
+          firestoreService.updateWorkerLocation(
+            workerId,
+            position.latitude,
+            position.longitude,
+          );
+          lastUpdate = now;
+        }
+      },
+      onError: (e) {
+        debugPrint('[EnhancedWorkerRequestsScreen] Location stream error: $e');
+      },
+    );
   }
 
   Future<void> _initializeWorker() async {
@@ -247,326 +270,307 @@ class _EnhancedWorkerRequestsScreenState
           });
         }
       },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          title: const Text('طلبات العامل'),
-          backgroundColor: Colors.transparent,
-          actions: [
-            IconButton(
-              icon: Icon(_showMap ? Icons.list : Icons.map),
-              onPressed: () => setState(() => _showMap = !_showMap),
-              tooltip: _showMap ? 'عرض القائمة' : 'عرض الخريطة',
-            ),
-            IconButton(
-              icon: const Icon(Icons.bookmark),
-              onPressed: _showSavedFiltersDialog,
-              tooltip: 'الفلاتر المحفوظة',
-            ),
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () => Navigator.pushNamed(context, '/user-profile'),
-              tooltip: 'الملف الشخصي',
-            ),
-          ],
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: isDark
-                ? AppColors.darkBackgroundGradient
-                : AppColors.backgroundGradient,
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<RequestCubit, RequestState>(
+            listener: (context, state) {
+              if (state is RequestLoaded) {
+                _updateMapMarkers(state.requests);
+              }
+            },
           ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                // Search Bar
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GlassmorphicSearchBar(
-                    controller: _searchController,
-                    hintText: 'ابحث عن طلب...',
-                    onChanged: (value) {
-                      _updateFilter(
-                        _currentFilter.copyWith(searchQuery: value),
-                      );
-                    },
-                    onClear: () {
-                      _updateFilter(_currentFilter.copyWith(searchQuery: ''));
-                    },
+        ],
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            title: const Text('طلبات العامل'),
+            backgroundColor: Colors.transparent,
+            actions: [
+              IconButton(
+                icon: Icon(_showMap ? Icons.list : Icons.map),
+                onPressed: () => setState(() => _showMap = !_showMap),
+                tooltip: _showMap ? 'عرض القائمة' : 'عرض الخريطة',
+              ),
+              IconButton(
+                icon: const Icon(Icons.bookmark),
+                onPressed: _showSavedFiltersDialog,
+                tooltip: 'الفلاتر المحفوظة',
+              ),
+              IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () => Navigator.pushNamed(context, '/user-profile'),
+                tooltip: 'الملف الشخصي',
+              ),
+            ],
+          ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppColors.darkBackgroundGradient
+                  : AppColors.backgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: GlassmorphicSearchBar(
+                      controller: _searchController,
+                      hintText: 'ابحث عن طلب...',
+                      onChanged: (value) {
+                        _updateFilter(
+                          _currentFilter.copyWith(searchQuery: value),
+                        );
+                      },
+                      onClear: () {
+                        _updateFilter(_currentFilter.copyWith(searchQuery: ''));
+                      },
+                    ),
                   ),
-                ),
 
-                // Filter Chips
-                if (_currentFilter.activeFiltersCount > 0)
-                  Container(
-                    height: 50,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
+                  // Filter Chips
+                  if (_currentFilter.activeFiltersCount > 0)
+                    Container(
+                      height: 50,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          if (_currentFilter.category != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Chip(
+                                label: Text(_currentFilter.category!),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () => _updateFilter(
+                                  _currentFilter.clearCategory(),
+                                ),
+                              ),
+                            ),
+                          if (_currentFilter.area != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Chip(
+                                label: Text(_currentFilter.area!),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () =>
+                                    _updateFilter(_currentFilter.clearArea()),
+                              ),
+                            ),
+                          if (_currentFilter.minBudget != null ||
+                              _currentFilter.maxBudget != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Chip(
+                                label: Text(
+                                  '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
+                                ),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () =>
+                                    _updateFilter(_currentFilter.clearBudget()),
+                              ),
+                            ),
+                          if (_currentFilter.maxDistance != null)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Chip(
+                                label: Text(
+                                  'حتى ${_currentFilter.maxDistance} كم',
+                                ),
+                                deleteIcon: const Icon(Icons.close, size: 18),
+                                onDeleted: () => _updateFilter(
+                                  _currentFilter.clearDistance(),
+                                ),
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ActionChip(
+                              label: const Text('مسح الكل'),
+                              onPressed: () {
+                                _searchController.clear();
+                                _updateFilter(_currentFilter.clearAll());
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Filter Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
                       children: [
-                        if (_currentFilter.category != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(_currentFilter.category!),
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              onDeleted: () =>
-                                  _updateFilter(_currentFilter.clearCategory()),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.filter_list),
+                            label: Text(
+                              _currentFilter.activeFiltersCount > 0
+                                  ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
+                                  : 'الفلاتر',
                             ),
-                          ),
-                        if (_currentFilter.area != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(_currentFilter.area!),
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              onDeleted: () =>
-                                  _updateFilter(_currentFilter.clearArea()),
-                            ),
-                          ),
-                        if (_currentFilter.minBudget != null ||
-                            _currentFilter.maxBudget != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(
-                                '${_currentFilter.minBudget ?? 0} - ${_currentFilter.maxBudget ?? '∞'} د.ع',
-                              ),
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              onDeleted: () =>
-                                  _updateFilter(_currentFilter.clearBudget()),
-                            ),
-                          ),
-                        if (_currentFilter.maxDistance != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Chip(
-                              label: Text(
-                                'حتى ${_currentFilter.maxDistance} كم',
-                              ),
-                              deleteIcon: const Icon(Icons.close, size: 18),
-                              onDeleted: () =>
-                                  _updateFilter(_currentFilter.clearDistance()),
-                            ),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            label: const Text('مسح الكل'),
-                            onPressed: () {
-                              _searchController.clear();
-                              _updateFilter(_currentFilter.clearAll());
-                            },
+                            onPressed: _showFilterDialog,
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                // Filter Button
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.filter_list),
-                          label: Text(
-                            _currentFilter.activeFiltersCount > 0
-                                ? 'الفلاتر (${_currentFilter.activeFiltersCount})'
-                                : 'الفلاتر',
-                          ),
-                          onPressed: _showFilterDialog,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Subscription Warning
-                BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) {
-                    if (state is Authenticated &&
-                        !state.user.isSubscriptionActive) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Card(
-                          color: Colors.orange.shade50,
-                          child: const ListTile(
-                            leading: Icon(Icons.info, color: Colors.orange),
-                            title: Text('انتهى الاشتراك'),
-                            subtitle: Text(
-                              'يرجى التجديد لعرض الطلبات واستلامها.',
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                    if (state is! Authenticated) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Card(
-                          color: Colors.red.shade50,
-                          child: const ListTile(
-                            leading: Icon(Icons.lock, color: Colors.red),
-                            title: Text('غير مسجل الدخول'),
-                            subtitle: Text(
-                              'يرجى تسجيل الدخول لاستلام الطلبات.',
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-
-                // Requests List
-                Expanded(
-                  child: BlocBuilder<RequestCubit, RequestState>(
+                  // Subscription Warning
+                  BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
-                      if (state is RequestLoading) {
-                        return ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: 5,
-                          itemBuilder: (context, index) =>
-                              const RequestCardSkeleton(),
-                        );
-                      }
-
-                      if (state is RequestError) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Colors.red,
+                      if (state is Authenticated &&
+                          !state.user.isSubscriptionActive) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Card(
+                            color: Colors.orange.shade50,
+                            child: const ListTile(
+                              leading: Icon(Icons.info, color: Colors.orange),
+                              title: Text('انتهى الاشتراك'),
+                              subtitle: Text(
+                                'يرجى التجديد لعرض الطلبات واستلامها.',
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'حدث خطأ في تحميل الطلبات',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                state.message,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  context.read<RequestCubit>().getRequests();
-                                },
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('إعادة المحاولة'),
-                              ),
-                            ],
+                            ),
                           ),
                         );
                       }
+                      if (state is! Authenticated) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Card(
+                            color: Colors.red.shade50,
+                            child: const ListTile(
+                              leading: Icon(Icons.lock, color: Colors.red),
+                              title: Text('غير مسجل الدخول'),
+                              subtitle: Text(
+                                'يرجى تسجيل الدخول لاستلام الطلبات.',
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
 
-                      if (state is RequestLoaded) {
-                        final newRequests = state.requests
-                            .where((r) => r.status == 'new')
-                            .toList();
-                        final filteredRequests = _applyFilters(newRequests);
+                  // Requests List
+                  Expanded(
+                    child: BlocBuilder<RequestCubit, RequestState>(
+                      builder: (context, state) {
+                        if (state is RequestLoading) {
+                          return ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: 5,
+                            itemBuilder: (context, index) =>
+                                const RequestCardSkeleton(),
+                          );
+                        }
 
-                        if (filteredRequests.isEmpty) {
+                        if (state is RequestError) {
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.inbox,
-                                  size: 64,
-                                  color: Colors.grey.shade400,
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 48,
+                                  color: Colors.red,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'لا توجد طلبات متاحة',
+                                  'حدث خطأ في تحميل الطلبات',
                                   style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey.shade600,
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
                                   ),
                                 ),
-                                if (_currentFilter.activeFiltersCount > 0) ...[
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _updateFilter(_currentFilter.clearAll());
-                                    },
-                                    child: const Text('مسح الفلاتر'),
+                                const SizedBox(height: 8),
+                                Text(
+                                  state.message,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
                                   ),
-                                ],
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    context.read<RequestCubit>().getRequests();
+                                  },
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('إعادة المحاولة'),
+                                ),
                               ],
                             ),
                           );
                         }
 
-                        return _showMap
-                            ? _buildMapView(filteredRequests)
-                            : _buildListView(filteredRequests);
-                      }
+                        if (state is RequestLoaded) {
+                          final newRequests = state.requests
+                              .where((r) => r.status == 'new')
+                              .toList();
+                          final filteredRequests = _applyFilters(newRequests);
 
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'حدث خطأ في تحميل الطلبات',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
+                          if (filteredRequests.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.inbox,
+                                    size: 64,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'لا توجد طلبات متاحة',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  if (_currentFilter.activeFiltersCount >
+                                      0) ...[
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _updateFilter(
+                                          _currentFilter.clearAll(),
+                                        );
+                                      },
+                                      child: const Text('مسح الفلاتر'),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'يرجى المحاولة مرة أخرى',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                context.read<RequestCubit>().getRequests();
-                              },
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('إعادة المحاولة'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                            );
+                          }
+
+                          return _showMap
+                              ? _buildMapView()
+                              : _buildListView(filteredRequests);
+                        }
+
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -671,28 +675,145 @@ class _EnhancedWorkerRequestsScreenState
     );
   }
 
-  Widget _buildMapView(List<RequestModel> requests) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'عرض الخريطة',
-            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'سيتم إضافة الخريطة التفاعلية قريباً',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '${requests.length} طلب متاح',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ],
+  void _updateMapMarkers(List<RequestModel> requests) {
+    final operationId = DateTime.now().millisecondsSinceEpoch;
+    debugPrint(
+      '[$operationId] [WorkerMapView] Updating markers for ${requests.length} requests',
+    );
+
+    try {
+      final newMarkers = requests
+          .where((r) => r.latitude != null && r.longitude != null)
+          .map((request) {
+            return Marker(
+              markerId: MarkerId(request.id),
+              position: LatLng(request.latitude!, request.longitude!),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                request.status == 'new'
+                    ? BitmapDescriptor.hueOrange
+                    : request.status == 'taken'
+                    ? BitmapDescriptor.hueBlue
+                    : BitmapDescriptor.hueGreen,
+              ),
+              onTap: () {
+                final dist = MapUtils.calculateDistance(
+                  lat1: 33.3152,
+                  lon1: 44.3661,
+                  lat2: request.latitude!,
+                  lon2: request.longitude!,
+                );
+                _showDetailsDialog(
+                  context,
+                  MapUtils.formatDistance(dist),
+                  request: request,
+                );
+              },
+              infoWindow: InfoWindow(
+                title: request.type,
+                snippet: '${request.area} - ${request.status}',
+              ),
+            );
+          })
+          .toSet();
+
+      debugPrint(
+        '[$operationId] [WorkerMapView] Generated ${newMarkers.length} markers',
+      );
+
+      setState(() {
+        _mapMarkers = newMarkers;
+      });
+
+      if (_mapMarkers.isNotEmpty &&
+          _mapController != null &&
+          !_hasInitialMarkersFitted) {
+        _fitMarkers();
+        _hasInitialMarkersFitted = true;
+      }
+    } catch (e) {
+      debugPrint('[$operationId] [WorkerMapView] Error updating markers: $e');
+    }
+  }
+
+  void _fitMarkers() {
+    if (_mapMarkers.isEmpty || _mapController == null) return;
+
+    double minLat = 90.0;
+    double maxLat = -90.0;
+    double minLng = 180.0;
+    double maxLng = -180.0;
+
+    for (final marker in _mapMarkers) {
+      if (marker.position.latitude < minLat) minLat = marker.position.latitude;
+      if (marker.position.latitude > maxLat) maxLat = marker.position.latitude;
+      if (marker.position.longitude < minLng)
+        minLng = marker.position.longitude;
+      if (marker.position.longitude > maxLng)
+        maxLng = marker.position.longitude;
+    }
+
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        70.0,
+      ),
+    );
+  }
+
+  Widget _buildMapView() {
+    return SizedBox.expand(
+      child: GoogleMap(
+        initialCameraPosition: const CameraPosition(
+          target: LatLng(33.3152, 44.3661), // Baghdad default
+          zoom: 12,
+        ),
+        onMapCreated: (controller) {
+          debugPrint('[WorkerMapView] Map Created');
+          _mapController = controller;
+          if (_mapMarkers.isNotEmpty) {
+            _fitMarkers();
+          }
+        },
+        onCameraMove: (position) {
+          debugPrint('[WorkerMapView] Camera Move: ${position.target}');
+        },
+        onCameraIdle: () {
+          debugPrint('[WorkerMapView] Camera Idle');
+        },
+        markers: _mapMarkers,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+        zoomControlsEnabled: false,
+        mapToolbarEnabled: false,
+      ),
+    );
+  }
+
+  void _showDetailsDialog(
+    BuildContext context,
+    String distance, {
+    RequestModel? request,
+  }) {
+    final req =
+        request ?? (context as dynamic).request; // Fallback for list view
+    showDialog(
+      context: context,
+      builder: (context) => _RequestDetailsDialog(
+        request: req,
+        distance: distance,
+        onTakeRequest: (requestId) async {
+          final authState = context.read<AuthCubit>().state;
+          if (authState is Authenticated) {
+            context.read<WorkerRequestCubit>().takeRequest(requestId);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم استلام الطلب بنجاح')),
+            );
+            context.read<RequestCubit>().getRequests();
+          }
+        },
       ),
     );
   }
@@ -904,7 +1025,10 @@ class _EnhancedRequestCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   IconButton(
                     icon: const Icon(Icons.info_outline),
-                    onPressed: () => _showDetailsDialog(context, distance),
+                    onPressed: () {
+                      final distance = _calculateDistance(request.area);
+                      _showDetailsDialog(context, distance, request: request);
+                    },
                   ),
                 ],
               ),
@@ -915,116 +1039,164 @@ class _EnhancedRequestCard extends StatelessWidget {
     );
   }
 
-  void _showDetailsDialog(BuildContext context, String distance) {
+  void _showDetailsDialog(
+    BuildContext context,
+    String distance, {
+    required RequestModel request,
+  }) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [AppColors.cardShadowHeavy],
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'تفاصيل الطلب',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+      builder: (context) => _RequestDetailsDialog(
+        request: request,
+        distance: distance,
+        onTakeRequest: (requestId) async {
+          final authState = context.read<AuthCubit>().state;
+          if (authState is Authenticated) {
+            context.read<WorkerRequestCubit>().takeRequest(requestId);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم استلام الطلب بنجاح')),
+            );
+            context.read<RequestCubit>().getRequests();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _RequestDetailsDialog extends StatelessWidget {
+  final RequestModel request;
+  final String distance;
+  final Function(String) onTakeRequest;
+
+  const _RequestDetailsDialog({
+    required this.request,
+    required this.distance,
+    required this.onTakeRequest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [AppColors.cardShadowHeavy],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'تفاصيل الطلب',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                const Divider(height: 32),
-                _buildDetailRow('النوع:', request.type),
-                _buildDetailRow('المنطقة:', request.area),
-                if (request.address != null)
-                  _buildDetailRow('العنوان:', request.address!),
-                _buildDetailRow('المسافة:', distance),
-                _buildDetailRow('الحالة:', request.status),
-                const SizedBox(height: 16),
+              ),
+              const Divider(height: 32),
+              _buildDetailRow('النوع:', request.type),
+              _buildDetailRow('المنطقة:', request.area),
+              if (request.address != null)
+                _buildDetailRow('العنوان:', request.address!),
+              _buildDetailRow('المسافة:', distance),
+              _buildDetailRow('الحالة:', request.status),
+              const SizedBox(height: 16),
 
-                // Map Preview Section
-                if (request.latitude != null && request.longitude != null) ...[
-                  const Text(
-                    'موقع الزبون:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 180,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(request.latitude!, request.longitude!),
-                        zoom: 14,
-                      ),
-                      markers: {
-                        Marker(
-                          markerId: const MarkerId('customer'),
-                          position: LatLng(
-                            request.latitude!,
-                            request.longitude!,
-                          ),
-                        ),
-                      },
-                      liteModeEnabled: true, // Optimizes for performance
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => MapUtils.showNavigationOptions(
-                        context: context,
-                        destinationLat: request.latitude!,
-                        destinationLng: request.longitude!,
-                        destinationLabel: request.address ?? request.area,
-                      ),
-                      icon: const Icon(Icons.navigation),
-                      label: const Text('فتح في تطبيق الملاحة'),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
+              // Map Preview Section
+              if (request.latitude != null && request.longitude != null) ...[
                 const Text(
-                  'الوصف:',
+                  'موقع الزبون:',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 8),
                 Container(
+                  height: 180,
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.background.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: Text(
-                    request.description,
-                    style: const TextStyle(height: 1.5),
+                  clipBehavior: Clip.antiAlias,
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(request.latitude!, request.longitude!),
+                      zoom: 14,
+                    ),
+                    markers: {
+                      Marker(
+                        markerId: const MarkerId('customer'),
+                        position: LatLng(request.latitude!, request.longitude!),
+                      ),
+                    },
+                    liteModeEnabled: true,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('إغلاق'),
+                  child: OutlinedButton.icon(
+                    onPressed: () => MapUtils.showNavigationOptions(
+                      context: context,
+                      destinationLat: request.latitude!,
+                      destinationLng: request.longitude!,
+                      destinationLabel: request.address ?? request.area,
+                    ),
+                    icon: const Icon(Icons.navigation),
+                    label: const Text('فتح في تطبيق الملاحة'),
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
-            ),
+
+              const Text(
+                'الوصف:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.background.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  request.description,
+                  style: const TextStyle(height: 1.5),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onTakeRequest(request.id);
+                      },
+                      child: const Text('استلام الطلب'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('إغلاق'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
