@@ -568,7 +568,6 @@ class _WorkerRegisterScreenState extends State<WorkerRegisterScreen> {
         password: _passwordController.text,
         name: _nameController.text.trim(),
         profession: _selectedProfession!,
-        context: context,
       );
     } catch (e, stackTrace) {
       debugPrint('[WorkerRegisterScreen] _handleRegister error: $e');

@@ -106,7 +106,6 @@ class AuthCubit extends Cubit<AuthState> {
     String phoneNumber,
     String password, {
     bool rememberMe = false,
-    required BuildContext context,
   }) async {
     emit(const AuthLoading());
     try {
@@ -148,7 +147,6 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
     required String name,
     required String profession,
-    required BuildContext context,
   }) async {
     emit(const AuthLoading());
     try {
@@ -165,7 +163,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       // Auto-login after registration
-      await loginWithPhone(phoneNumber, password, context: context);
+      await loginWithPhone(phoneNumber, password);
 
       // Success message will be shown by the BlocListener in the UI
     } catch (e, stackTrace) {

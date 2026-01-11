@@ -52,7 +52,6 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> checkAuthState() async {
     try {
       final shouldAutoLogin = await _storageService.shouldAutoLogin();
-      final currentUser = FirebaseAuth.instance.currentUser;
       final userType = await _storageService.getUserType();
 
       if (shouldAutoLogin && userType == 'admin') {
